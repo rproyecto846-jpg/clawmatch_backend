@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Crear Torneo</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 1.5rem;
+        }
+        .form-full { grid-column: 1 / -1; }
+        label { display: block; color: #aaa; font-size: 0.85rem; margin-bottom: 0.25rem; margin-top: 0.5rem; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <div class="card" style="max-width:700px;margin:0 auto;">
+        <h2>🏆 Crear nuevo torneo</h2>
+        <div id="mensaje" class="mensaje"></div>
+        <div class="form-grid">
+            <div class="form-full">
+                <label>Nombre del torneo *</label>
+                <input type="text" id="nombre" placeholder="Ej: Torneo Verano 2026">
+            </div>
+            <div class="form-full">
+                <label>Descripción</label>
+                <input type="text" id="descripcion" placeholder="Descripción del torneo">
+            </div>
+            <div>
+                <label>Tipo de torneo *</label>
+                <select id="tipo">
+                    <option value="">Selecciona tipo</option>
+                    <option value="eliminacion">Eliminación</option>
+                    <option value="liga">Liga</option>
+                    <option value="speedrun">Speedrun</option>
+                    <option value="puntuacion">Puntuación</option>
+                </select>
+            </div>
+            <div>
+              	<label>Juego *</label>
+<select id="id_juego" onchange="toggleJuegoCustom()">
+    <option value="">Cargando juegos...</option>
+</select>
+    <div id="juego-custom" style="display:none">
+    	<label>Nombre del juego *</label>
+   		 <input type="text" id="juego-nombre" placeholder="Ej: Minecraft">
+    	<label>Plataforma</label>
+    		<input type="text" id="juego-plataforma" placeholder="Ej: PC, PS5, Xbox...">
+    	<label>Género</label>
+	    <input type="text" id="juego-genero" placeholder="Ej: Shooter, MOBA, Plataformas...">
+	</div>
+            <div>
+                <label>Fecha de inicio *</label>
+                <input type="datetime-local" id="fecha_inicio">
+            </div>
+            <div>
+                <label>Fecha de fin *</label>
+                <input type="datetime-local" id="fecha_fin">
+            </div>
+            <div>
+                <label>Máx. participantes</label>
+                <input type="number" id="max_participantes" placeholder="8" min="2" max="256">
+            </div>
+            <div>
+                <label>Premio</label>
+                <input type="text" id="premio" placeholder="Ej: 100€, Skin exclusiva...">
+            </div>
+            <div>
+                <label>Precio de inscripción (€)</label>
+                <input type="number" id="precio_inscripcion" placeholder="0" min="0" step="0.01">
+            </div>
+        </div>
+        <br>
+        <button onclick="crearTorneo()">Crear torneo</button>
+        <button class="btn-secondary" onclick="window.location.href='torneos.html'">Cancelar</button>
+    </div>
+</div>
+<script>
+function toggleJuegoCustom() {
+    const val = document.getElementById("id_juego").value;
+    document.getElementById("juego-custom").style.display = val === "otro" ? "block" : "none";
+}
+
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+async function cargarJuegos() {
+    const res = await fetch("/api/juegos", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const juegos = await res.json();
+    const select = document.getElementById("id_juego");
+   	select.innerHTML = `<option value="" disabled selected>Selecciona juego</option>` +
+        juegos.map(j => `<option value="${j.id_juego}">${j.nombre} (${j.plataforma || "PC"})</option>`).join("") +
+        `<option value="otro">➕ Otro (añadir nuevo)</option>`;
+}
+
+async function crearTorneo() {
+    const nombre = document.getElementById("nombre").value;
+    const tipo = document.getElementById("tipo").value;
+    let id_juego = document.getElementById("id_juego").value;
+    const fecha_inicio = document.getElementById("fecha_inicio").value;
+    const fecha_fin = document.getElementById("fecha_fin").value;
+    const msg = document.getElementById("mensaje");
+
+    if (!nombre || !tipo || !id_juego || !fecha_inicio || !fecha_fin) {
+        msg.className = "mensaje error";
+        msg.textContent = "Rellena todos los campos obligatorios (*)";
+        return;
+    }
+
+    // Si eligió "otro", crear el juego primero
+    if (id_juego === "otro") {
+        const juegoNombre = document.getElementById("juego-nombre").value;
+        if (!juegoNombre) {
+            msg.className = "mensaje error";
+            msg.textContent = "Escribe el nombre del juego";
+            return;
+        }
+        const resJuego = await fetch("/api/juegos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({
+                nombre: juegoNombre,
+                plataforma: document.getElementById("juego-plataforma").value,
+                genero: document.getElementById("juego-genero").value
+            })
+        });
+        const dataJuego = await resJuego.json();
+        if (!resJuego.ok) {
+            msg.className = "mensaje error";
+            msg.textContent = dataJuego.error;
+            return;
+        }
+        id_juego = dataJuego.id_juego;
+    }
+
+    const body = {
+        nombre,
+        descripcion: document.getElementById("descripcion").value,
+        tipo,
+        id_juego: parseInt(id_juego),
+        fecha_inicio,
+        fecha_fin,
+        max_participantes: parseInt(document.getElementById("max_participantes").value) || 8,
+        premio: document.getElementById("premio").value,
+        precio_inscripcion: parseFloat(document.getElementById("precio_inscripcion").value) || 0
+    };
+
+    const res = await fetch("/api/torneos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+        msg.className = "mensaje exito";
+        msg.textContent = "Torneo creado correctamente, redirigiendo...";
+        setTimeout(() => window.location.href = "torneos.html", 1500);
+    } else {
+        msg.className = "mensaje error";
+        msg.textContent = data.error;
+    }
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+}
+
+cargarJuegos();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

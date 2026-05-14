@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Ranking</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .ranking-header {
+            text-align: center;
+            padding: 2rem 0;
+        }
+        .ranking-header h2 {
+            font-size: 2rem;
+        }
+        .ranking-header p {
+            color: #aaa;
+            margin-top: 0.5rem;
+        }
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .ranking-table th {
+            background: #e94560;
+            color: white;
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+        .ranking-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        .ranking-table tr:hover td {
+            background: #1a1a2e;
+        }
+        .posicion-1 { color: #ffd700; font-weight: bold; font-size: 1.2rem; }
+        .posicion-2 { color: #c0c0c0; font-weight: bold; }
+        .posicion-3 { color: #cd7f32; font-weight: bold; }
+        .empty {
+            text-align: center;
+            padding: 3rem;
+            color: #aaa;
+        }
+        .volver {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: #e94560;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        .volver:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <span class="volver" onclick="window.location.href='torneos.html'">← Volver a torneos</span>
+    <div class="card">
+        <div class="ranking-header">
+            <h2 id="torneo-nombre">Cargando...</h2>
+            <p id="torneo-info"></p>
+        </div>
+        <div id="ranking-contenido">Cargando ranking...</div>
+    </div>
+</div>
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+const params = new URLSearchParams(window.location.search);
+const id_torneo = params.get("id");
+
+if (!id_torneo) window.location.href = "torneos.html";
+
+async function cargarRanking() {
+    const [resTorneo, resRanking] = await Promise.all([
+        fetch(`/api/torneos/${id_torneo}`, { headers: { "Authorization": `Bearer ${token}` } }),
+        fetch(`/api/torneos/${id_torneo}/ranking`, { headers: { "Authorization": `Bearer ${token}` } })
+    ]);
+
+    const torneo = await resTorneo.json();
+    const ranking = await resRanking.json();
+
+    document.title = `ClawMatch - ${torneo.nombre}`;
+    document.getElementById("torneo-nombre").textContent = `🏆 ${torneo.nombre}`;
+    document.getElementById("torneo-info").textContent = 
+        `${torneo.juego || ""} · Premio: ${torneo.premio || "Sin premio"} · ${new Date(torneo.fecha_inicio).toLocaleDateString()} — ${new Date(torneo.fecha_fin).toLocaleDateString()}`;
+
+    const div = document.getElementById("ranking-contenido");
+
+    if (ranking.length === 0) {
+        div.innerHTML = `<div class="empty">😴 Aún no hay resultados para este torneo.</div>`;
+        return;
+    }
+
+    const medalias = ["🥇", "🥈", "🥉"];
+
+    div.innerHTML = `
+        <table class="ranking-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Jugador</th>
+                    <th>Marca</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${ranking.map(r => `
+                    <tr>
+                        <td class="posicion-${r.posicion}">
+                            ${r.posicion <= 3 ? medalias[r.posicion - 1] : r.posicion}
+                        </td>
+                        <td>${r.nombre_usuario}</td>
+                        <td><b>${r.marca}</b></td>
+                        <td style="color:#aaa;font-size:0.85rem">${new Date(r.fecha_registro).toLocaleString()}</td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>
+    `;
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+}
+
+cargarRanking();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

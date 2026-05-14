@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Torneos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a href="crear-torneo.html">+ Crear torneo</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <div class="card">
+        <h2>Torneos disponibles</h2>
+        <div id="mensaje" class="mensaje"></div>
+        <div id="lista-torneos">Cargando...</div>
+    </div>
+</div>
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+let usuarioActual = null;
+
+async function verificarRol() {
+    const res = await fetch("/api/auth/perfil", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    usuarioActual = await res.json();
+    if (usuarioActual.rol === "administrador") {
+        document.getElementById("link-admin").style.display = "inline";
+    }
+}
+
+async function cargarTorneos() {
+    const res = await fetch("/api/torneos", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const torneos = await res.json();
+    const lista = document.getElementById("lista-torneos");
+
+    if (torneos.length === 0) {
+        lista.innerHTML = "<p style='color:#aaa'>No hay torneos disponibles.</p>";
+        return;
+    }
+
+    lista.innerHTML = torneos.map(t => `
+        <div class="torneo-card">
+            <div class="torneo-info">
+                <h3 style="cursor:pointer;color:#e94560" onclick="window.location.href='detalle-torneo.html?id=${t.id_torneo}'">${t.nombre}</h3>
+                <p>${t.descripcion || ""}</p>
+                <p>📅 ${new Date(t.fecha_inicio).toLocaleDateString()} — ${new Date(t.fecha_fin).toLocaleDateString()}</p>
+                <p>🏆 Premio: ${t.premio || "Sin premio"}</p>
+                <p style="color:#aaa;font-size:0.85rem">Creado por: ${t.nombre_usuario}</p>
+            </div>
+            <div style="text-align:right">
+                <span class="badge ${t.estado}">${t.estado}</span><br><br>
+                ${t.estado === "abierto" ? `<button onclick="inscribirse(${t.id_torneo})">Inscribirse</button>` : ""}
+                <button class="btn-secondary" onclick="verRanking(${t.id_torneo})">Ranking</button>
+                ${usuarioActual && (usuarioActual.id_usuario === t.creado_por || usuarioActual.rol === "administrador") 
+                    ? `<button class="btn-secondary" onclick="editarTorneo(${t.id_torneo}, '${t.nombre}', '${t.descripcion || ""}', '${t.fecha_inicio}', '${t.fecha_fin}', '${t.premio || ""}', '${t.estado}', ${t.max_participantes})">✏️ Editar</button>` 
+                    : ""}
+            </div>
+        </div>
+    `).join("");
+}
+
+async function inscribirse(id_torneo) {
+    const res = await fetch(`/api/torneos/${id_torneo}/inscribirse`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const msg = document.getElementById("mensaje");
+    msg.className = res.ok ? "mensaje exito" : "mensaje error";
+    msg.textContent = data.message || data.error;
+    setTimeout(() => msg.className = "mensaje", 3000);
+}
+
+function verRanking(id_torneo) {
+    window.location.href = `ranking.html?id=${id_torneo}`;
+}
+
+function editarTorneo(id, nombre, desc, inicio, fin, premio, estado, max) {
+    window.location.href = `editar-torneo.html?id=${id}`;
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+}
+
+verificarRol();
+cargarTorneos();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Pago</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .pago-container {
+            max-width: 500px;
+            margin: 3rem auto;
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid #2a2a4a;
+        }
+        .plan-resumen {
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e94560;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .plan-resumen .nombre { font-size: 1.2rem; font-weight: bold; color: #e94560; }
+        .plan-resumen .precio { font-size: 1.8rem; font-weight: bold; }
+        .plan-resumen .precio span { font-size: 0.9rem; color: #aaa; }
+        .form-grupo {
+            margin-bottom: 1.2rem;
+        }
+        .form-grupo label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        .form-grupo input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .form-grupo input:focus {
+            border-color: #e94560;
+            outline: none;
+        }
+        .fila-dos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .tarjeta-iconos {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .tarjeta-iconos span {
+            background: #2a2a4a;
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+        .btn-pagar {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+            background: linear-gradient(135deg, #e94560, #c73652);
+        }
+        .btn-pagar:hover { background: linear-gradient(135deg, #c73652, #a02a42); }
+        .seguro {
+            text-align: center;
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 1rem;
+        }
+        .volver {
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            color: #aaa;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .volver:hover { color: #e94560; }
+        .demo-aviso {
+            background: #1a2a1a;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 1.5rem;
+            color: #4caf50;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="suscripciones.html">⭐ Suscripción</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="pago-container">
+        <h2 style="margin-bottom:1.5rem;text-align:center">💳 Completar suscripción</h2>
+
+        <div class="demo-aviso">
+            ⚠️ Modo demo — no se realizará ningún cobro real
+        </div>
+
+        <div class="plan-resumen" id="plan-resumen">
+            <div>
+                <div class="nombre" id="res-nombre">-</div>
+                <div style="color:#aaa;font-size:0.85rem">Suscripción mensual</div>
+            </div>
+            <div class="precio">
+                <span id="res-precio">-</span><span>/mes</span>
+            </div>
+        </div>
+
+        <div id="mensaje" class="mensaje"></div>
+
+        <div class="tarjeta-iconos">
+            <span>💳 VISA</span>
+            <span>💳 Mastercard</span>
+            <span>💳 AMEX</span>
+        </div>
+
+        <div class="form-grupo">
+            <label>Número de tarjeta</label>
+            <input type="text" id="num-tarjeta" placeholder="1234 5678 9012 3456" maxlength="19">
+        </div>
+        <div class="form-grupo">
+            <label>Titular de la tarjeta</label>
+            <input type="text" id="titular" placeholder="NOMBRE APELLIDO">
+        </div>
+        <div class="fila-dos">
+            <div class="form-grupo">
+                <label>Fecha de expiración</label>
+                <input type="text" id="expiracion" placeholder="MM/AA" maxlength="5">
+            </div>
+            <div class="form-grupo">
+                <label>CVV</label>
+                <input type="text" id="cvv" placeholder="123" maxlength="3">
+            </div>
+        </div>
+
+        <button class="btn btn-pagar" onclick="procesarPago()">🔒 Confirmar suscripción</button>
+        <span class="seguro">🔒 Pago seguro simulado — proyecto académico</span>
+        <a class="volver" onclick="history.back()">← Volver a los planes</a>
+    </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+const planData = JSON.parse(localStorage.getItem("planSeleccionado") || "null");
+if (!planData) window.location.href = "suscripciones.html";
+
+document.getElementById("res-nombre").textContent = planData?.nombre || "-";
+document.getElementById("res-precio").textContent = planData?.precio ? planData.precio + "€" : "-";
+
+// Formato automático número tarjeta
+document.getElementById("num-tarjeta").addEventListener("input", function () {
+    let val = this.value.replace(/\D/g, "").substring(0, 16);
+    this.value = val.match(/.{1,4}/g)?.join(" ") || val;
+});
+
+// Formato automático expiración
+document.getElementById("expiracion").addEventListener("input", function () {
+    let val = this.value.replace(/\D/g, "").substring(0, 4);
+    if (val.length >= 3) val = val.substring(0, 2) + "/" + val.substring(2);
+    this.value = val;
+});
+
+async function procesarPago() {
+    const num = document.getElementById("num-tarjeta").value.replace(/\s/g, "");
+    const titular = document.getElementById("titular").value.trim();
+    const exp = document.getElementById("expiracion").value;
+    const cvv = document.getElementById("cvv").value;
+    const msg = document.getElementById("mensaje");
+
+    if (num.length !== 16) return mostrarError("Número de tarjeta inválido");
+    if (!titular) return mostrarError("Introduce el nombre del titular");
+    if (!/^\d{2}\/\d{2}$/.test(exp)) return mostrarError("Fecha de expiración inválida (MM/AA)");
+    if (cvv.length < 3) return mostrarError("CVV inválido");
+
+    const btn = document.querySelector(".btn-pagar");
+    btn.disabled = true;
+    btn.textContent = "⏳ Procesando...";
+
+    // Simular delay de pago
+    await new Promise(r => setTimeout(r, 1500));
+
+    const res = await fetch("/api/suscripciones/activar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ id_tipo: planData.id_tipo })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+        msg.className = "mensaje exito";
+        msg.textContent = `✅ ¡Suscripción ${planData.nombre} activada correctamente!`;
+        localStorage.removeItem("planSeleccionado");
+        setTimeout(() => window.location.href = "suscripciones.html", 2000);
+    } else {
+        mostrarError(data.error || "Error al activar la suscripción");
+        btn.disabled = false;
+        btn.textContent = "🔒 Confirmar suscripción";
+    }
+}
+
+function mostrarError(msg) {
+    const el = document.getElementById("mensaje");
+    el.className = "mensaje error";
+    el.textContent = msg;
+}
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

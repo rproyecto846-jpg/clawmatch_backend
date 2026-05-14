@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Registro</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .codigo-input {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .codigo-input input {
+            width: 45px;
+            height: 55px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div>
+        <a href="login.html">Login</a>
+        <a href="register.html">Registro</a>
+    </div>
+</nav>
+<div class="container">
+
+    <!-- PASO 1: REGISTRO -->
+    <div class="card" id="paso-registro" style="max-width:450px;margin:3rem auto;">
+        <h2>Crear cuenta</h2>
+        <div id="mensaje" class="mensaje"></div>
+        <input type="text" id="nombre" placeholder="Nombre de usuario *">
+        <input type="email" id="email" placeholder="Email *">
+        <input type="password" id="password" placeholder="Contraseña *">
+        <input type="tel" id="telefono" placeholder="Teléfono (opcional)" onkeydown="if(event.key==='Enter')register()">
+        <button onclick="register()" style="width:100%">Registrarse</button>
+        <p style="margin-top:1rem;color:#aaa;text-align:center">¿Ya tienes cuenta? <a href="login.html" class="link">Inicia sesión</a></p>
+    </div>
+
+    <!-- PASO 2: VERIFICACIÓN -->
+    <div class="card" id="paso-verificacion" style="max-width:450px;margin:3rem auto;display:none;text-align:center">
+        <h2>Verifica tu cuenta</h2>
+        <p style="color:#aaa;margin-bottom:1.5rem">Hemos enviado un código de 6 dígitos a <b id="email-enviado"></b></p>
+        <div id="mensaje-verificacion" class="mensaje"></div>
+        <div class="codigo-input">
+            <input type="text" maxlength="1" id="c1" oninput="moverFoco(this, 'c2')" onkeydown="borrarFoco(event, this, null)">
+            <input type="text" maxlength="1" id="c2" oninput="moverFoco(this, 'c3')" onkeydown="borrarFoco(event, this, 'c1')">
+            <input type="text" maxlength="1" id="c3" oninput="moverFoco(this, 'c4')" onkeydown="borrarFoco(event, this, 'c2')">
+            <input type="text" maxlength="1" id="c4" oninput="moverFoco(this, 'c5')" onkeydown="borrarFoco(event, this, 'c3')">
+            <input type="text" maxlength="1" id="c5" oninput="moverFoco(this, 'c6')" onkeydown="borrarFoco(event, this, 'c4')">
+            <input type="text" maxlength="1" id="c6" oninput="moverFoco(this, null)" onkeydown="borrarFoco(event, this, 'c5')">
+        </div>
+        <button onclick="verificar()" style="width:100%">Verificar cuenta</button>
+        <p style="margin-top:1rem;color:#aaa;font-size:0.9rem">
+            ¿No recibiste el código? 
+            <a href="#" class="link" onclick="reenviar()">Reenviar</a>
+        </p>
+    </div>
+
+</div>
+<script>
+let emailRegistrado = "";
+
+async function register() {
+    const nombre_usuario = document.getElementById("nombre").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const telefono = document.getElementById("telefono").value;
+    const msg = document.getElementById("mensaje");
+
+    if (!nombre_usuario || !email || !password) {
+        msg.className = "mensaje error";
+        msg.textContent = "Rellena todos los campos obligatorios";
+        return;
+    }
+
+    const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre_usuario, email, password, telefono })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+        emailRegistrado = email;
+        document.getElementById("paso-registro").style.display = "none";
+        document.getElementById("paso-verificacion").style.display = "block";
+        document.getElementById("email-enviado").textContent = email;
+        document.getElementById("c1").focus();
+    } else {
+        msg.className = "mensaje error";
+        msg.textContent = data.error;
+    }
+}
+
+function moverFoco(input, siguienteId) {
+    if (input.value && siguienteId) {
+        document.getElementById(siguienteId).focus();
+    }
+    // Auto verificar cuando se complete
+    const codigo = getCodigo();
+    if (codigo.length === 6) verificar();
+}
+
+function borrarFoco(event, input, anteriorId) {
+    if (event.key === "Backspace" && !input.value && anteriorId) {
+        document.getElementById(anteriorId).focus();
+    }
+}
+
+function getCodigo() {
+    return ["c1","c2","c3","c4","c5","c6"].map(id => document.getElementById(id).value).join("");
+}
+
+async function verificar() {
+    const codigo = getCodigo();
+    if (codigo.length !== 6) return;
+
+    const msg = document.getElementById("mensaje-verificacion");
+    const res = await fetch("/api/auth/verificar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailRegistrado, codigo })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+        msg.className = "mensaje exito";
+        msg.textContent = "¡Cuenta verificada! Redirigiendo...";
+        setTimeout(() => window.location.href = "login.html", 1500);
+    } else {
+        msg.className = "mensaje error";
+        msg.textContent = data.error;
+        ["c1","c2","c3","c4","c5","c6"].forEach(id => document.getElementById(id).value = "");
+        document.getElementById("c1").focus();
+    }
+}
+
+async function reenviar() {
+    const msg = document.getElementById("mensaje-verificacion");
+    const res = await fetch("/api/auth/reenviar-codigo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailRegistrado })
+    });
+    const data = await res.json();
+    msg.className = res.ok ? "mensaje exito" : "mensaje error";
+    msg.textContent = data.message || data.error;
+}
+</script>
+</body>
+</html>

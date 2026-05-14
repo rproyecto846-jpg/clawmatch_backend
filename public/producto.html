@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Producto</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .producto-detalle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .producto-imagen-grande {
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #2a2a4a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 350px;
+            overflow: hidden;
+        }
+        .producto-imagen-grande img {
+            width: 100%;
+            height: 350px;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+        .producto-imagen-grande .emoji-placeholder {
+            font-size: 8rem;
+        }
+        .producto-datos { display: flex; flex-direction: column; gap: 1rem; }
+        .producto-categoria {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #2a2a4a;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .producto-nombre-detalle { font-size: 1.8rem; font-weight: bold; line-height: 1.2; }
+        .producto-precio-detalle { font-size: 2.2rem; font-weight: bold; color: #e94560; }
+        .producto-precio-detalle span { font-size: 1rem; color: #aaa; }
+        .stock-info { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+        .stock-ok { color: #4caf50; }
+        .stock-bajo { color: #ff9800; }
+        .stock-agotado { color: #f44336; }
+        .cantidad-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            width: fit-content;
+        }
+        .btn-cant {
+            background: #2a2a4a;
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .btn-cant:hover { background: #e94560; }
+        .cant-numero { font-size: 1.1rem; font-weight: bold; min-width: 24px; text-align: center; }
+        .envio-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .envio-linea {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.4rem 0;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        .envio-linea span:first-child { font-size: 1.1rem; }
+        .envio-gratis { color: #4caf50; font-weight: bold; }
+        .btn-añadir-detalle {
+            padding: 1rem;
+            font-size: 1.1rem;
+            width: 100%;
+        }
+        .btn-comprar-ya {
+            padding: 1rem;
+            font-size: 1.1rem;
+            width: 100%;
+            background: #ffd700;
+            color: #0f0f1a;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-comprar-ya:hover { background: #e6c200; }
+        .descripcion-completa {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .descripcion-completa h3 { margin-bottom: 1rem; font-size: 1.2rem; }
+        .descripcion-completa p { color: #ccc; line-height: 1.7; }
+        .volver { color: #aaa; font-size: 0.9rem; cursor: pointer; margin-bottom: 1rem; display: inline-block; }
+        .volver:hover { color: #e94560; }
+        @media (max-width: 768px) {
+            .producto-detalle { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="tienda.html">🛍️ Tienda</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+
+<div class="container">
+    <a class="volver" onclick="history.back()">← Volver a la tienda</a>
+    <div id="mensaje" class="mensaje"></div>
+    <div id="contenido">Cargando...</div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+if (!id) window.location.href = "tienda.html";
+
+let cantidad = 1;
+let productoActual = null;
+
+async function init() {
+    const res = await fetch(`/api/tienda/productos/${id}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!res.ok) { window.location.href = "tienda.html"; return; }
+    productoActual = await res.json();
+    renderProducto(productoActual);
+}
+
+function renderProducto(p) {
+    document.title = `ClawMatch - ${p.nombre}`;
+
+    const stockInfo = p.stock === 0
+        ? `<span class="stock-agotado">❌ Sin stock</span>`
+        : p.stock <= 5
+        ? `<span class="stock-bajo">⚠️ Quedan solo ${p.stock} unidades</span>`
+        : `<span class="stock-ok">✅ En stock (${p.stock} disponibles)</span>`;
+
+    document.getElementById("contenido").innerHTML = `
+        <div class="producto-detalle">
+            <!-- IMAGEN -->
+            <div class="producto-imagen-grande">
+                ${p.imagen_url
+                    ? `<img src="${p.imagen_url}" alt="${p.nombre}" onerror="this.parentElement.innerHTML='<div class=emoji-placeholder>${getEmoji(p.categoria)}</div>'">`
+                    : `<div class="emoji-placeholder">${getEmoji(p.categoria)}</div>`
+                }
+            </div>
+
+            <!-- DATOS -->
+            <div class="producto-datos">
+                <div>
+                    <span class="producto-categoria">${p.categoria || "general"}</span>
+                </div>
+                <div class="producto-nombre-detalle">${p.nombre}</div>
+                <div class="producto-precio-detalle">
+                    ${p.precio}€ <span>IVA incluido</span>
+                </div>
+                <div class="stock-info">${stockInfo}</div>
+
+                <!-- ENVÍO -->
+                <div class="envio-card">
+                    <div class="envio-linea">
+                        <span>🚚</span>
+                        <span>Envío: <span class="envio-gratis">GRATIS</span></span>
+                    </div>
+                    <div class="envio-linea">
+                        <span>📦</span>
+                        <span>Entrega estimada: <b>3-5 días laborables</b></span>
+                    </div>
+                    <div class="envio-linea">
+                        <span>🔄</span>
+                        <span>Devoluciones gratuitas en 30 días</span>
+                    </div>
+                </div>
+
+                <!-- CANTIDAD -->
+                ${p.stock > 0 ? `
+                <div>
+                    <label style="color:#aaa;font-size:0.85rem;margin-bottom:0.5rem;display:block">Cantidad</label>
+                    <div class="cantidad-selector">
+                        <button class="btn-cant" onclick="cambiarCantidad(-1)">−</button>
+                        <span class="cant-numero" id="cant-display">1</span>
+                        <button class="btn-cant" onclick="cambiarCantidad(1)">+</button>
+                    </div>
+                </div>
+                <button class="btn-añadir-detalle btn" onclick="añadirCarrito()">
+                    🛒 Añadir al carrito
+                </button>
+                <button class="btn-comprar-ya" onclick="comprarYa()">
+                    ⚡ Comprar ahora
+                </button>
+                ` : `
+                <button disabled style="width:100%;padding:1rem;background:#2a2a4a;color:#666;border:none;border-radius:8px;font-size:1.1rem">
+                    Sin stock
+                </button>
+                `}
+            </div>
+        </div>
+
+        <!-- DESCRIPCIÓN -->
+        <div class="descripcion-completa">
+            <h3>📋 Descripción del producto</h3>
+            <p>${p.descripcion || "Sin descripción disponible."}</p>
+        </div>
+    `;
+}
+
+function getEmoji(categoria) {
+    const emojis = { ropa: "👕", gaming: "🎮", accesorios: "🎒" };
+    return emojis[categoria] || "📦";
+}
+
+function cambiarCantidad(delta) {
+    cantidad = Math.max(1, Math.min(productoActual.stock, cantidad + delta));
+    document.getElementById("cant-display").textContent = cantidad;
+}
+
+async function añadirCarrito() {
+    const res = await fetch("/api/tienda/carrito", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ id_producto: productoActual.id_producto, cantidad })
+    });
+    const data = await res.json();
+    const msg = document.getElementById("mensaje");
+    if (res.ok) {
+        msg.className = "mensaje exito";
+        msg.textContent = "✅ Producto añadido al carrito";
+        setTimeout(() => msg.className = "mensaje", 2500);
+    } else {
+        msg.className = "mensaje error";
+        msg.textContent = data.error;
+    }
+}
+
+async function comprarYa() {
+    await añadirCarrito();
+    setTimeout(() => window.location.href = "checkout.html", 500);
+}
+
+init();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

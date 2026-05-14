@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Suscripciones</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .planes-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .plan-card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 2rem;
+            border: 2px solid #2a2a4a;
+            position: relative;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .plan-card:hover { transform: translateY(-4px); }
+        .plan-card.normal { border-color: #2a2a4a; }
+        .plan-card.pro { border-color: #e94560; }
+        .plan-card.premium { border-color: #ffd700; background: linear-gradient(135deg, #1a1a2e, #2a1a0e); }
+        .plan-card.activo { box-shadow: 0 0 20px rgba(233,69,96,0.3); }
+        .plan-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.25rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .badge-pro { background: #e94560; color: white; }
+        .badge-premium { background: #ffd700; color: #0f0f1a; }
+        .badge-activo { background: #4caf50; color: white; }
+        .plan-nombre { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .plan-precio { font-size: 2.5rem; font-weight: bold; margin: 1rem 0; }
+        .plan-precio span { font-size: 1rem; color: #aaa; }
+        .plan-features { list-style: none; margin: 1.5rem 0; }
+        .plan-features li { padding: 0.4rem 0; color: #ccc; font-size: 0.9rem; }
+        .plan-features li::before { content: "✅ "; }
+        .plan-features li.no::before { content: "❌ "; }
+        .plan-features li.no { color: #666; }
+        .plan-btn { width: 100%; margin-top: 1rem; }
+        .plan-btn.activo-btn { background: #4caf50; }
+        .mi-suscripcion {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 1.5rem;
+            border: 1px solid #e94560;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        @media (max-width: 768px) {
+            .planes-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <h2 style="text-align:center;margin-bottom:0.5rem">🎮 Planes de suscripción</h2>
+    <p style="text-align:center;color:#aaa;margin-bottom:2rem">Elige el plan que mejor se adapte a ti</p>
+
+    <div id="mensaje" class="mensaje"></div>
+
+    <!-- MI SUSCRIPCIÓN ACTUAL -->
+    <div class="mi-suscripcion" id="mi-suscripcion">
+        <div>
+            <h3>Tu plan actual: <span id="plan-actual" style="color:#e94560">Cargando...</span></h3>
+            <p id="plan-expira" style="color:#aaa;font-size:0.85rem"></p>
+        </div>
+        <a href="perfil.html" style="color:#aaa;font-size:0.85rem">Ver perfil →</a>
+    </div>
+
+    <!-- PLANES -->
+    <div class="planes-grid" id="planes-grid">Cargando...</div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+let suscripcionActual = null;
+
+async function init() {
+    await cargarMiSuscripcion();
+    await cargarPlanes();
+}
+
+async function cargarMiSuscripcion() {
+    const res = await fetch("/api/suscripciones/mi-suscripcion", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    suscripcionActual = await res.json();
+    document.getElementById("plan-actual").textContent = suscripcionActual.nombre || "Normal";
+    if (suscripcionActual.suscripcion_expira) {
+        document.getElementById("plan-expira").textContent = 
+            `Expira el ${new Date(suscripcionActual.suscripcion_expira).toLocaleDateString()}`;
+    } else {
+        document.getElementById("plan-expira").textContent = suscripcionActual.precio === 0 ? "Plan gratuito" : "";
+    }
+}
+
+async function cargarPlanes() {
+    const res = await fetch("/api/suscripciones/planes", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const planes = await res.json();
+    const grid = document.getElementById("planes-grid");
+
+    const features = {
+        "Normal": [
+            { texto: "Hasta 3 torneos creados", activo: true },
+            { texto: "Foto de perfil estática", activo: true },
+            { texto: "Color de perfil personalizable", activo: true },
+            { texto: "Acceso a comunidades y chats", activo: true },
+            { texto: "GIFs en foto de perfil", activo: false },
+            { texto: "Banner de perfil", activo: false },
+            { texto: "Remarcos personalizados", activo: false },
+            { texto: "Colores y fuentes custom", activo: false }
+        ],
+        "Pro": [
+            { texto: "Hasta 10 torneos creados", activo: true },
+            { texto: "GIFs en foto de perfil", activo: true },
+            { texto: "Banner estilo YouTube", activo: true },
+            { texto: "Remarcos personalizados", activo: true },
+            { texto: "Color de perfil personalizable", activo: true },
+            { texto: "Acceso a comunidades y chats", activo: true },
+            { texto: "Colores y fuentes custom", activo: false },
+            { texto: "Banner fondo estilo Steam", activo: false }
+        ],
+        "Premium": [
+            { texto: "Torneos ilimitados", activo: true },
+            { texto: "GIFs en foto de perfil", activo: true },
+            { texto: "Banner estilo YouTube o Steam", activo: true },
+            { texto: "Remarcos exclusivos", activo: true },
+            { texto: "Colores y fuentes personalizables", activo: true },
+            { texto: "Color de perfil personalizable", activo: true },
+            { texto: "Acceso prioritario a novedades", activo: true },
+            { texto: "Badge Premium en el perfil", activo: true }
+        ]
+    };
+
+    grid.innerHTML = planes.map(p => {
+        const esActual = suscripcionActual?.nombre === p.nombre;
+        const esNormal = p.nombre === "Normal";
+        const esPro = p.nombre === "Pro";
+        const esPremium = p.nombre === "Premium";
+
+        return `
+            <div class="plan-card ${p.nombre.toLowerCase()} ${esActual ? 'activo' : ''}">
+                ${esPro ? '<span class="plan-badge badge-pro">⭐ MÁS POPULAR</span>' : ''}
+                ${esPremium ? '<span class="plan-badge badge-premium">👑 PREMIUM</span>' : ''}
+                ${esActual ? '<span class="plan-badge badge-activo" style="top:auto;bottom:-12px">✅ PLAN ACTUAL</span>' : ''}
+                <div class="plan-nombre" style="color:${esPremium ? '#ffd700' : esPro ? '#e94560' : '#e0e0e0'}">${p.nombre}</div>
+                <div class="plan-precio">
+                    ${p.precio === 0 ? 'Gratis' : p.precio + '€'}
+                    ${p.precio > 0 ? '<span>/mes</span>' : ''}
+                </div>
+                <p style="color:#aaa;font-size:0.85rem">${p.descripcion}</p>
+                <ul class="plan-features">
+                    ${(features[p.nombre] || []).map(f => `<li class="${f.activo ? '' : 'no'}">${f.texto}</li>`).join("")}
+                </ul>
+                ${esActual
+                    ? `<button class="plan-btn activo-btn" disabled>Plan actual</button>`
+                    : `<button class="plan-btn ${esPremium ? 'btn-premium' : ''}" 
+                        style="${esPremium ? 'background:#ffd700;color:#0f0f1a' : ''}"
+                        onclick="seleccionarPlan(${p.id_tipo}, '${p.nombre}', ${p.precio})">
+                        ${p.precio === 0 ? 'Usar gratis' : `Suscribirse por ${p.precio}€/mes`}
+                       </button>`
+                }
+            </div>
+        `;
+    }).join("");
+}
+
+async function seleccionarPlan(id_tipo, nombre, precio) {
+    if (precio > 0) {
+        // Guardar plan seleccionado y redirigir a pago
+        localStorage.setItem("planSeleccionado", JSON.stringify({ id_tipo, nombre, precio }));
+        window.location.href = "pago.html";
+        return;
+    }
+
+    // Plan gratuito — activar directamente
+    if (!confirm(`¿Cambiar al plan ${nombre}?`)) return;
+    const res = await fetch("/api/suscripciones/activar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ id_tipo })
+    });
+    const data = await res.json();
+    const msg = document.getElementById("mensaje");
+    msg.className = res.ok ? "mensaje exito" : "mensaje error";
+    msg.textContent = data.message || data.error;
+    if (res.ok) setTimeout(() => init(), 1500);
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+}
+
+init();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

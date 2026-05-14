@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Mis pedidos</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .pedido-card { background: #0f0f1a; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; border: 1px solid #2a2a4a; }
+        .pedido-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+        .pedido-id { font-weight: bold; color: #e94560; }
+        .pedido-fecha { color: #aaa; font-size: 0.85rem; }
+        .pedido-estado { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .pendiente { background: #4a3a1a; color: #ff9800; }
+        .procesando { background: #1a1a4a; color: #2196f3; }
+        .enviado { background: #1a2a4a; color: #00bcd4; }
+        .entregado { background: #1a4a2a; color: #4caf50; }
+        .cancelado { background: #4a1a1a; color: #f44336; }
+        .pedido-item { display: flex; gap: 0.75rem; padding: 0.5rem 0; align-items: center; }
+        .item-img { width: 40px; height: 40px; border-radius: 4px; background: #2a2a4a; display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden; flex-shrink: 0; }
+        .item-img img { width: 40px; height: 40px; object-fit: cover; }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="tienda.html">🛍️ Tienda</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <h2 style="margin-bottom:1.5rem">📋 Mis pedidos</h2>
+    <div id="pedidos">Cargando...</div>
+</div>
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+async function init() {
+    const res = await fetch("/api/tienda/pedidos", { headers: { "Authorization": `Bearer ${token}` } });
+    const pedidos = await res.json();
+    const div = document.getElementById("pedidos");
+
+    if (pedidos.length === 0) {
+        div.innerHTML = "<div class='card' style='text-align:center;padding:3rem;color:#aaa'>😴 No tienes pedidos aún. <a href='tienda.html' style='color:#e94560'>Ir a la tienda →</a></div>";
+        return;
+    }
+
+    div.innerHTML = pedidos.map(p => `
+        <div class="pedido-card">
+            <div class="pedido-header">
+                <div>
+                    <span class="pedido-id">Pedido #${p.id_pedido}</span>
+                    <span class="pedido-fecha" style="margin-left:0.75rem">${new Date(p.fecha_pedido).toLocaleDateString()}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:1rem">
+                    <span style="font-weight:bold;color:#e94560">${p.total}€</span>
+                    <span class="pedido-estado ${p.estado}">${p.estado}</span>
+                </div>
+            </div>
+            <div>
+                ${(p.items || []).map(item => `
+                    <div class="pedido-item">
+                        <div class="item-img">
+                            ${item.imagen_url ? `<img src="${item.imagen_url}" onerror="this.parentElement.innerHTML='📦'">` : "📦"}
+                        </div>
+                        <div style="flex:1">
+                            <div style="font-size:0.9rem">${item.nombre}</div>
+                            <div style="color:#aaa;font-size:0.8rem">x${item.cantidad} · ${item.precio_unitario}€/ud</div>
+                        </div>
+                        <div style="color:#e94560;font-weight:bold">${(item.precio_unitario * item.cantidad).toFixed(2)}€</div>
+                    </div>
+                `).join("")}
+            </div>
+            <div style="color:#aaa;font-size:0.8rem;margin-top:0.75rem">📍 ${p.direccion_envio}</div>
+        </div>
+    `).join("");
+}
+
+init();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

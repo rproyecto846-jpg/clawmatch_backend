@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Perfil</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .perfil-header {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 1.5rem;
+            margin-top: 0;
+        }
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e94560;
+        }
+        .avatar-placeholder {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #2a2a4a;
+            border: 3px solid #e94560;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+        }
+        .perfil-info h2 { font-size: 1.5rem; }
+        .perfil-info .nickname { color: #e94560; font-size: 1.1rem; margin-top: 0.25rem; }
+        .perfil-info p { color: #aaa; margin-top: 0.25rem; }
+        .stat-grid { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; }
+        .stat-card { background: #0f0f1a; border-radius: 8px; padding: 1rem 1.5rem; text-align: center; border: 1px solid #2a2a4a; flex: 1; min-width: 100px; }
+        .stat-card .numero { font-size: 1.8rem; font-weight: bold; color: #e94560; }
+        .stat-card .etiqueta { color: #aaa; font-size: 0.85rem; margin-top: 0.25rem; }
+        .torneo-card { background: #0f0f1a; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; border: 1px solid #2a2a4a; display: flex; justify-content: space-between; align-items: center; }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .abierto { background: #1a4a2a; color: #4caf50; }
+        .en_curso { background: #4a3a1a; color: #ff9800; }
+        .finalizado { background: #4a1a1a; color: #f44336; }
+        .volver { display: inline-block; margin-bottom: 1rem; color: #e94560; cursor: pointer; }
+        .volver:hover { text-decoration: underline; }
+	.nivel-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-left: 0.5rem; }
+.badge-normal { background: #2a2a4a; color: #aaa; }
+.badge-pro { background: #e94560; color: white; }
+.badge-premium { background: #ffd700; color: #0f0f1a; }
+.remarco-glow { box-shadow: 0 0 12px 4px #e94560, 0 0 0 3px #e94560; }
+.remarco-patron-puntos { border: 4px dotted #e94560 !important; }
+.remarco-patron-lineas { border: 4px dashed #e94560 !important; }
+.remarco-degradado { border: 4px solid transparent !important; background: linear-gradient(#1a1a2e,#1a1a2e) padding-box, linear-gradient(135deg,#e94560,#9b59b6,#3498db) border-box; }
+.remarco-dorado { border: 4px solid #ffd700 !important; box-shadow: 0 0 15px 4px #ffd700aa; animation: remarco-pulso 2s ease-in-out infinite; }
+.remarco-animated { animation: remarco-rotate 3s linear infinite; }
+@keyframes remarco-pulso { 0%,100% { box-shadow: 0 0 10px 3px #ffd700aa; } 50% { box-shadow: 0 0 25px 8px #ffd700cc; } }
+@keyframes remarco-rotate { 0% { border-color: #e94560; } 33% { border-color: #9b59b6; } 66% { border-color: #3498db; } 100% { border-color: #e94560; } }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <span class="volver" onclick="history.back()">← Volver</span>
+    <div id="mensaje" class="mensaje"></div>
+
+  <div class="card" id="card-perfil-usuario" style="padding:0;overflow:hidden">
+        <div class="perfil-header">
+            <div id="avatar-display"></div>
+            <div class="perfil-info">
+                <h2 id="display-nombre">-</h2>
+                <div id="display-nickname" class="nickname"></div>
+                <p id="display-rol"></p>
+                <p id="display-fecha" style="font-size:0.85rem"></p>
+            </div>
+            <div style="margin-left:auto">
+                <button id="btn-md" onclick="crearOIrMD()" style="display:none">💬 Enviar mensaje</button>
+            </div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="numero" id="stat-torneos">-</div>
+                <div class="etiqueta">Torneos</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero" id="stat-comunidades">-</div>
+                <div class="etiqueta">Comunidades</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🏆 Torneos</h2>
+        <div id="torneos-usuario">Cargando...</div>
+    </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+const params = new URLSearchParams(window.location.search);
+const id_usuario = params.get("id");
+if (!id_usuario) window.location.href = "torneos.html";
+
+const REMARCOS = [
+    { id: "ninguno", clase: "" },
+    { id: "glow", clase: "remarco-glow" },
+    { id: "animated", clase: "remarco-animated" },
+    { id: "puntos", clase: "remarco-patron-puntos" },
+    { id: "lineas", clase: "remarco-patron-lineas" },
+    { id: "degradado", clase: "remarco-degradado" },
+    { id: "dorado", clase: "remarco-dorado" }
+];
+
+let usuarioActual = null;
+let perfilUsuario = null;
+
+async function init() {
+    const resPerfil = await fetch("/api/auth/perfil", { headers: { "Authorization": `Bearer ${token}` } });
+    usuarioActual = await resPerfil.json();
+
+    // Si es su propio perfil redirigir
+    if (String(usuarioActual.id_usuario) === String(id_usuario)) {
+        window.location.href = "perfil.html";
+        return;
+    }
+
+    await cargarPerfil();
+    cargarTorneos();
+}
+
+async function cargarPerfil() {
+    const res = await fetch(`/api/usuarios/${id_usuario}`, { headers: { "Authorization": `Bearer ${token}` } });
+    perfilUsuario = await res.json();
+
+    document.title = `ClawMatch - @${perfilUsuario.nombre_usuario}`;
+
+    // Banner
+    const card = document.getElementById("card-perfil-usuario");
+    console.log("Banner URL:", perfilUsuario.banner_url);
+    console.log("Banner Tipo:", perfilUsuario.banner_tipo);
+    console.log("Nivel:", perfilUsuario.nivel);
+    if (perfilUsuario.banner_url && (perfilUsuario.nivel === "Pro" || perfilUsuario.nivel === "Premium")) {
+        if (perfilUsuario.banner_tipo === "steam") {
+            card.style.backgroundImage = `url('${perfilUsuario.banner_url}')`;
+            card.style.backgroundSize = "cover";
+            card.style.backgroundPosition = "center";
+            card.style.position = "relative";
+            card.style.overflow = "hidden";
+            const overlay = document.createElement("div");
+            overlay.style.cssText = `position:absolute;inset:0;background:rgba(0,0,0,0.6);z-index:0;pointer-events:none;`;
+            card.prepend(overlay);
+            card.querySelectorAll(":scope > *").forEach(el => {
+                el.style.position = "relative";
+                el.style.zIndex = "1";
+            });
+        } else {
+            const bannerDiv = document.createElement("div");
+            bannerDiv.style.cssText = `width:100%;height:160px;background:url('${perfilUsuario.banner_url}') center/cover;border-radius:12px 12px 0 0;display:block;`;
+            card.prepend(bannerDiv);
+        }
+    }
+
+    // Color de fondo
+    if (perfilUsuario.color_perfil) {
+        document.getElementById("card-perfil-usuario").style.background = perfilUsuario.color_perfil;
+    }
+
+    // Remarco
+    const remarcoClase = REMARCOS.find(r => r.id === (perfilUsuario.remarco || "ninguno"))?.clase || "";
+
+    // Avatar
+    const avatarDiv = document.getElementById("avatar-display");
+    if (perfilUsuario.foto_perfil) {
+        avatarDiv.innerHTML = `<img src="${perfilUsuario.foto_perfil}" class="avatar ${remarcoClase}">`;
+    } else {
+        avatarDiv.innerHTML = `<div class="avatar-placeholder ${remarcoClase}">👤</div>`;
+    }
+
+    document.getElementById("display-nombre").textContent = perfilUsuario.nombre_usuario;
+    document.getElementById("display-nickname").textContent = perfilUsuario.nickname ? `"${perfilUsuario.nickname}"` : "";
+
+    // Badge nivel
+    const nivel = perfilUsuario.nivel || "Normal";
+    const badgeEl = document.getElementById("display-rol");
+    badgeEl.innerHTML = `🎭 ${perfilUsuario.rol} <span class="nivel-badge badge-${nivel.toLowerCase()}">${nivel === "Premium" ? "👑 " : nivel === "Pro" ? "⭐ " : ""}${nivel}</span>`;
+
+    document.getElementById("display-fecha").textContent = `📅 Miembro desde ${new Date(perfilUsuario.fecha_registro).toLocaleDateString()}`;
+
+    // Botón MD
+    const resChats = await fetch("/api/chats", { headers: { "Authorization": `Bearer ${token}` } });
+    const chats = await resChats.json();
+    const mdExistente = chats.find(c =>
+        !c.es_grupal && c.participantes.some(p => p.id_usuario === parseInt(id_usuario))
+    );
+
+    const btnMd = document.getElementById("btn-md");
+    btnMd.style.display = "inline-block";
+    btnMd.textContent = mdExistente ? "💬 Ir al chat" : "💬 Enviar mensaje";
+    btnMd.onclick = () => mdExistente ? irAMD(mdExistente.id_chat) : crearMD();
+}
+
+async function crearMD() {
+    const res = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ participantes: [parseInt(id_usuario)], es_grupal: false })
+    });
+    const data = await res.json();
+    if (res.ok) window.location.href = `chats.html`;
+}
+
+function irAMD(id_chat) {
+    window.location.href = `chats.html`;
+}
+
+async function cargarTorneos() {
+    const res = await fetch(`/api/usuarios/${id_usuario}/torneos`, { headers: { "Authorization": `Bearer ${token}` } });
+    const torneos = await res.json();
+
+    document.getElementById("stat-torneos").textContent = torneos.length;
+
+// Cargar comunidades
+const resComs = await fetch(`/api/usuarios/${id_usuario}/comunidades`, { headers: { "Authorization": `Bearer ${token}` } });
+const coms = await resComs.json();
+document.getElementById("stat-comunidades").textContent = coms.total;
+    const div = document.getElementById("torneos-usuario");
+    if (torneos.length === 0) {
+        div.innerHTML = "<p style='color:#aaa'>No está inscrito en ningún torneo.</p>";
+        return;
+    }
+
+    div.innerHTML = torneos.map(t => `
+        <div class="torneo-card">
+            <div>
+                <b style="cursor:pointer;color:#e94560" onclick="window.location.href='detalle-torneo.html?id=${t.id_torneo}'">${t.nombre}</b>
+                <p style="color:#aaa;font-size:0.85rem">📅 ${new Date(t.fecha_inicio).toLocaleDateString()}</p>
+            </div>
+            <span class="badge ${t.estado}">${t.estado}</span>
+        </div>
+    `).join("");
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+}
+</script>
+<script src="nav.js"></script>
+<script>initNav(); init();</script>
+</body>
+</html>

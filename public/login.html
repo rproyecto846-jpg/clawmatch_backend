@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Login</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .codigo-input { display:flex; gap:0.5rem; justify-content:center; margin-bottom:1rem; }
+        .codigo-input input { width:45px; height:55px; text-align:center; font-size:1.5rem; font-weight:bold; padding:0; border-radius:8px; }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div>
+        <a href="login.html">Login</a>
+        <a href="register.html">Registro</a>
+    </div>
+</nav>
+<div class="container">
+
+    <!-- PASO 1: LOGIN -->
+    <div class="card" id="paso-login" style="max-width:400px;margin:3rem auto;">
+        <h2>Iniciar sesión</h2>
+        <div id="mensaje" class="mensaje"></div>
+        <input type="email" id="email" placeholder="Email" onkeydown="if(event.key==='Enter')login()">
+        <input type="password" id="password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
+        <button onclick="login()" style="width:100%">Entrar</button>
+        <p style="margin-top:1rem;color:#aaa;text-align:center">¿No tienes cuenta? <a href="register.html" class="link">Regístrate</a></p>
+    </div>
+
+    <!-- PASO 2: 2FA -->
+    <div class="card" id="paso-2fa" style="max-width:400px;margin:3rem auto;display:none;text-align:center">
+        <h2>🔐 Verificación en dos pasos</h2>
+        <p style="color:#aaa;margin-bottom:1.5rem">Hemos enviado un código a <b id="email-2fa"></b></p>
+        <div id="mensaje-2fa" class="mensaje"></div>
+        <div class="codigo-input">
+            <input type="text" maxlength="1" id="c1" oninput="moverFoco(this,'c2')" onkeydown="borrarFoco(event,this,null)">
+            <input type="text" maxlength="1" id="c2" oninput="moverFoco(this,'c3')" onkeydown="borrarFoco(event,this,'c1')">
+            <input type="text" maxlength="1" id="c3" oninput="moverFoco(this,'c4')" onkeydown="borrarFoco(event,this,'c2')">
+            <input type="text" maxlength="1" id="c4" oninput="moverFoco(this,'c5')" onkeydown="borrarFoco(event,this,'c3')">
+            <input type="text" maxlength="1" id="c5" oninput="moverFoco(this,'c6')" onkeydown="borrarFoco(event,this,'c4')">
+            <input type="text" maxlength="1" id="c6" oninput="moverFoco(this,null)" onkeydown="borrarFoco(event,this,'c5')">
+        </div>
+        <button onclick="verificar2FA()" style="width:100%">Verificar</button>
+        <p style="margin-top:1rem;color:#aaa;font-size:0.9rem">
+            ¿No recibiste el código? <a href="#" class="link" onclick="reenviar2FA()">Reenviar</a>
+        </p>
+    </div>
+
+</div>
+<script>
+let email2FA = "";
+
+async function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const msg = document.getElementById("mensaje");
+
+    const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+        if (data.requiere2FA) {
+            email2FA = data.email;
+            document.getElementById("paso-login").style.display = "none";
+            document.getElementById("paso-2fa").style.display = "block";
+            document.getElementById("email-2fa").textContent = email2FA;
+            document.getElementById("c1").focus();
+        } else {
+            localStorage.setItem("token", data.token);
+            window.location.href = "torneos.html";
+        }
+    } else if (data.noVerificado) {
+        localStorage.setItem("emailVerificar", data.email);
+        msg.className = "mensaje error";
+        msg.innerHTML = `Cuenta no verificada. <a href="verificar.html" class="link">Verificar ahora</a>`;
+    } else {
+        msg.className = "mensaje error";
+        msg.textContent = data.error;
+    }
+}
+
+function moverFoco(input, siguienteId) {
+    if (input.value && siguienteId) document.getElementById(siguienteId).focus();
+    if (getCodigo().length === 6) verificar2FA();
+}
+
+function borrarFoco(event, input, anteriorId) {
+    if (event.key === "Backspace" && !input.value && anteriorId) document.getElementById(anteriorId).focus();
+}
+
+function getCodigo() {
+    return ["c1","c2","c3","c4","c5","c6"].map(id => document.getElementById(id).value).join("");
+}
+
+async function verificar2FA() {
+    const codigo = getCodigo();
+    if (codigo.length !== 6) return;
+    const msg = document.getElementById("mensaje-2fa");
+
+    const res = await fetch("/api/auth/2fa/verificar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email2FA, codigo })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+        localStorage.setItem("token", data.token);
+        window.location.href = "torneos.html";
+    } else {
+        msg.className = "mensaje error";
+        msg.textContent = data.error;
+        ["c1","c2","c3","c4","c5","c6"].forEach(id => document.getElementById(id).value = "");
+        document.getElementById("c1").focus();
+    }
+}
+
+async function reenviar2FA() {
+    const msg = document.getElementById("mensaje-2fa");
+    const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            email: email2FA,
+            password: document.getElementById("password").value
+        })
+    });
+    const data = await res.json();
+    msg.className = res.ok ? "mensaje exito" : "mensaje error";
+    msg.textContent = res.ok ? "Código reenviado" : data.error;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Torneo</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .torneo-banner {
+            background: linear-gradient(135deg, #1a1a2e, #2a2a4a);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e94560;
+        }
+        .torneo-banner h2 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .torneo-meta { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+        .meta-item { background: #0f0f1a; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; }
+        .meta-item span { color: #aaa; font-size: 0.8rem; display: block; }
+        .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .tab { padding: 0.6rem 1.5rem; border-radius: 6px; cursor: pointer; background: #2a2a4a; color: #e0e0e0; border: none; font-size: 1rem; }
+        .tab.active, .tab:hover { background: #e94560; color: white; }
+        .seccion { display: none; }
+        .seccion.activa { display: block; }
+        .participante-fila {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        .participante-fila:hover { background: #1a1a2e; }
+        .ranking-tabla { width: 100%; border-collapse: collapse; }
+        .ranking-tabla th { background: #e94560; color: white; padding: 0.75rem; text-align: left; }
+        .ranking-tabla td { padding: 0.75rem; border-bottom: 1px solid #2a2a4a; }
+        .ranking-tabla tr:hover td { background: #1a1a2e; }
+        .pos-1 { color: #ffd700; font-weight: bold; font-size: 1.2rem; }
+        .pos-2 { color: #c0c0c0; font-weight: bold; }
+        .pos-3 { color: #cd7f32; font-weight: bold; }
+        .estado-badge { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
+        .abierto { background: #1a4a2a; color: #4caf50; }
+        .en_curso { background: #4a3a1a; color: #ff9800; }
+        .finalizado { background: #4a1a1a; color: #f44336; }
+        .volver { display: inline-block; margin-bottom: 1rem; color: #e94560; cursor: pointer; }
+        .volver:hover { text-decoration: underline; }
+        .empty { text-align: center; padding: 3rem; color: #aaa; }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <span class="volver" onclick="window.location.href='torneos.html'">← Volver a torneos</span>
+    <div id="torneo-banner" class="torneo-banner">Cargando...</div>
+    <div id="mensaje" class="mensaje"></div>
+    <div class="tabs">
+        <button class="tab active" onclick="cambiarTab('info', event)">📋 Información</button>
+        <button class="tab" onclick="cambiarTab('participantes', event)">👥 Participantes</button>
+        <button class="tab" onclick="cambiarTab('ranking', event)">🏆 Ranking</button>
+    </div>
+
+    <!-- INFO -->
+    <div id="tab-info" class="seccion activa">
+        <div class="card" id="info-contenido">Cargando...</div>
+    </div>
+
+    <!-- PARTICIPANTES -->
+    <div id="tab-participantes" class="seccion">
+        <div class="card">
+            <h2>👥 Participantes</h2>
+            <div id="lista-participantes">Cargando...</div>
+        </div>
+    </div>
+
+    <!-- RANKING -->
+    <div id="tab-ranking" class="seccion">
+        <div class="card">
+            <h2>🏆 Ranking</h2>
+            <div id="tabla-ranking">Cargando...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+const params = new URLSearchParams(window.location.search);
+const id_torneo = params.get("id");
+if (!id_torneo) window.location.href = "torneos.html";
+
+let usuarioActual = null;
+let torneoData = null;
+
+async function init() {
+    const resPerfil = await fetch("/api/auth/perfil", { headers: { "Authorization": `Bearer ${token}` } });
+    usuarioActual = await resPerfil.json();
+    if (usuarioActual.rol === "administrador") document.getElementById("link-admin").style.display = "inline";
+    await cargarTorneo();
+    cargarInfo();
+}
+
+async function cargarTorneo() {
+    const res = await fetch(`/api/torneos/${id_torneo}`, { headers: { "Authorization": `Bearer ${token}` } });
+    torneoData = await res.json();
+
+    const medalias = { abierto: "🟢", en_curso: "🟡", finalizado: "🔴" };
+    document.title = `ClawMatch - ${torneoData.nombre}`;
+
+    document.getElementById("torneo-banner").innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem">
+            <div>
+                <h2>${torneoData.nombre}</h2>
+                <p style="color:#aaa">${torneoData.descripcion || ""}</p>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+                <span class="estado-badge ${torneoData.estado}">${medalias[torneoData.estado]} ${torneoData.estado}</span>
+                ${torneoData.estado === "abierto" ? `<button onclick="inscribirse()">Inscribirse</button>` : ""}
+                ${usuarioActual && (usuarioActual.id_usuario === torneoData.creado_por || usuarioActual.rol === "administrador")
+                    ? `<button class="btn-secondary" onclick="window.location.href='editar-torneo.html?id=${id_torneo}'">✏️ Editar</button>` : ""}
+            </div>
+        </div>
+        <div class="torneo-meta">
+            <div class="meta-item"><span>🎮 Juego</span>${torneoData.juego || "Sin especificar"}</div>
+            <div class="meta-item"><span>🎯 Tipo</span>${torneoData.tipo || "Sin especificar"}</div>
+            <div class="meta-item"><span>🏆 Premio</span>${torneoData.premio || "Sin premio"}</div>
+            <div class="meta-item"><span>👥 Máx. participantes</span>${torneoData.max_participantes}</div>
+            <div class="meta-item"><span>💰 Inscripción</span>${torneoData.precio_inscripcion > 0 ? torneoData.precio_inscripcion + "€" : "Gratuito"}</div>
+            <div class="meta-item"><span>📅 Inicio</span>${new Date(torneoData.fecha_inicio).toLocaleDateString()}</div>
+            <div class="meta-item"><span>📅 Fin</span>${new Date(torneoData.fecha_fin).toLocaleDateString()}</div>
+            <div class="meta-item"><span>👤 Creado por</span>${torneoData.nombre_usuario}</div>
+        </div>
+    `;
+}
+
+function cargarInfo() {
+    document.getElementById("info-contenido").innerHTML = `
+        <h2>📋 Sobre este torneo</h2>
+        <p style="color:#ccc;line-height:1.8;margin-top:1rem">${torneoData.descripcion || "Sin descripción."}</p>
+        <br>
+        <h3 style="color:#e94560;margin-bottom:1rem">Detalles</h3>
+        <table style="width:100%;border-collapse:collapse">
+            <tr><td style="padding:0.5rem;color:#aaa;width:40%">Juego</td><td style="padding:0.5rem">${torneoData.juego || "-"}</td></tr>
+            <tr style="background:#0f0f1a"><td style="padding:0.5rem;color:#aaa">Tipo</td><td style="padding:0.5rem">${torneoData.tipo || "-"}</td></tr>
+            <tr><td style="padding:0.5rem;color:#aaa">Premio</td><td style="padding:0.5rem">${torneoData.premio || "Sin premio"}</td></tr>
+            <tr style="background:#0f0f1a"><td style="padding:0.5rem;color:#aaa">Precio inscripción</td><td style="padding:0.5rem">${torneoData.precio_inscripcion > 0 ? torneoData.precio_inscripcion + "€" : "Gratuito"}</td></tr>
+            <tr><td style="padding:0.5rem;color:#aaa">Máx. participantes</td><td style="padding:0.5rem">${torneoData.max_participantes}</td></tr>
+            <tr style="background:#0f0f1a"><td style="padding:0.5rem;color:#aaa">Fecha inicio</td><td style="padding:0.5rem">${new Date(torneoData.fecha_inicio).toLocaleString()}</td></tr>
+            <tr><td style="padding:0.5rem;color:#aaa">Fecha fin</td><td style="padding:0.5rem">${new Date(torneoData.fecha_fin).toLocaleString()}</td></tr>
+            <tr style="background:#0f0f1a"><td style="padding:0.5rem;color:#aaa">Creado por</td><td style="padding:0.5rem">${torneoData.nombre_usuario}</td></tr>
+        </table>
+    `;
+}
+
+async function cargarParticipantes() {
+    const res = await fetch(`/api/torneos/${id_torneo}/participantes`, { headers: { "Authorization": `Bearer ${token}` } });
+    const participantes = await res.json();
+    const div = document.getElementById("lista-participantes");
+
+    if (participantes.length === 0) {
+        div.innerHTML = "<div class='empty'>😴 No hay participantes aún.</div>";
+        return;
+    }
+
+    div.innerHTML = `
+        <p style="color:#aaa;margin-bottom:1rem">${participantes.length} participante${participantes.length !== 1 ? "s" : ""}</p>
+        ${participantes.map(p => `
+            <div class="participante-fila">
+                <div>
+                    <b>@${p.nombre_usuario}</b>
+                    <span style="color:#aaa;font-size:0.8rem;margin-left:0.5rem">Se unió el ${new Date(p.fecha_inscripcion).toLocaleDateString()}</span>
+                </div>
+                <span class="estado-badge ${p.estado === 'activo' ? 'abierto' : 'finalizado'}">${p.estado}</span>
+            </div>
+        `).join("")}
+    `;
+}
+
+async function cargarRanking() {
+    const res = await fetch(`/api/torneos/${id_torneo}/ranking`, { headers: { "Authorization": `Bearer ${token}` } });
+    const ranking = await res.json();
+    const div = document.getElementById("tabla-ranking");
+
+    if (ranking.length === 0) {
+        div.innerHTML = "<div class='empty'>😴 Aún no hay resultados.</div>";
+        return;
+    }
+
+    const medalias = ["🥇", "🥈", "🥉"];
+    div.innerHTML = `
+        <table class="ranking-tabla">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Jugador</th>
+                    <th>Marca</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${ranking.map(r => `
+                    <tr>
+                        <td class="pos-${r.posicion}">${r.posicion <= 3 ? medalias[r.posicion - 1] : r.posicion}</td>
+                        <td><b>@${r.nombre_usuario}</b></td>
+                        <td>${r.marca}</td>
+                        <td style="color:#aaa;font-size:0.85rem">${new Date(r.fecha_registro).toLocaleString()}</td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>
+    `;
+}
+
+async function inscribirse() {
+    const res = await fetch(`/api/torneos/${id_torneo}/inscribirse`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const msg = document.getElementById("mensaje");
+    msg.className = res.ok ? "mensaje exito" : "mensaje error";
+    msg.textContent = data.message || data.error;
+    setTimeout(() => msg.className = "mensaje", 3000);
+    if (res.ok) cargarTorneo();
+}
+
+function cambiarTab(tab, event) {
+    document.querySelectorAll(".seccion").forEach(s => s.classList.remove("activa"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.getElementById(`tab-${tab}`).classList.add("activa");
+    event.target.classList.add("active");
+    if (tab === "participantes") cargarParticipantes();
+    if (tab === "ranking") cargarRanking();
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+}
+
+init();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

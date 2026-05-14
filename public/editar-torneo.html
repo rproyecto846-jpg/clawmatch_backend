@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Editar Torneo</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; }
+        .form-full { grid-column: 1 / -1; }
+        label { display: block; color: #aaa; font-size: 0.85rem; margin-bottom: 0.25rem; margin-top: 0.5rem; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <div class="card" style="max-width:700px;margin:0 auto;">
+        <h2>✏️ Editar torneo</h2>
+        <div id="mensaje" class="mensaje"></div>
+        <div class="form-grid">
+            <div class="form-full">
+                <label>Nombre del torneo *</label>
+                <input type="text" id="nombre" placeholder="Nombre del torneo">
+            </div>
+            <div class="form-full">
+                <label>Descripción</label>
+                <input type="text" id="descripcion" placeholder="Descripción">
+            </div>
+            <div>
+                <label>Tipo de torneo</label>
+                <select id="tipo">
+                    <option value="eliminacion">Eliminación</option>
+                    <option value="liga">Liga</option>
+                    <option value="speedrun">Speedrun</option>
+                    <option value="puntuacion">Puntuación</option>
+                </select>
+            </div>
+            <div>
+                <label>Estado</label>
+                <select id="estado">
+                    <option value="abierto">Abierto</option>
+                    <option value="en_curso">En curso</option>
+                    <option value="finalizado">Finalizado</option>
+                </select>
+            </div>
+            <div>
+                <label>Fecha de inicio *</label>
+                <input type="datetime-local" id="fecha_inicio">
+            </div>
+            <div>
+                <label>Fecha de fin *</label>
+                <input type="datetime-local" id="fecha_fin">
+            </div>
+            <div>
+                <label>Máx. participantes</label>
+                <input type="number" id="max_participantes" min="2" max="256">
+            </div>
+            <div>
+                <label>Premio</label>
+                <input type="text" id="premio" placeholder="Premio">
+            </div>
+            <div>
+                <label>Precio de inscripción (€)</label>
+                <input type="number" id="precio_inscripcion" min="0" step="0.01">
+            </div>
+        </div>
+        <br>
+        <button onclick="guardarCambios()">Guardar cambios</button>
+        <button class="btn-secondary" onclick="window.location.href='torneos.html'">Cancelar</button>
+	<button class="btn-danger" style="background:#f44336;margin-top:2rem;width:100%" onclick="borrarTorneo()">🗑️ Eliminar torneo</button>
+    </div>
+</div>
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+const params = new URLSearchParams(window.location.search);
+const id_torneo = params.get("id");
+if (!id_torneo) window.location.href = "torneos.html";
+
+async function cargarTorneo() {
+    const res = await fetch(`/api/torneos/${id_torneo}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const t = await res.json();
+
+    const resPerfil = await fetch("/api/auth/perfil", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const user = await resPerfil.json();
+    if (user.id_usuario !== t.creado_por && user.rol !== "administrador") {
+        window.location.href = "torneos.html";
+        return;
+    }
+
+    document.getElementById("nombre").value = t.nombre;
+    document.getElementById("descripcion").value = t.descripcion || "";
+    document.getElementById("tipo").value = t.tipo || "eliminacion";
+    document.getElementById("estado").value = t.estado;
+    document.getElementById("fecha_inicio").value = new Date(t.fecha_inicio).toISOString().slice(0,16);
+    document.getElementById("fecha_fin").value = new Date(t.fecha_fin).toISOString().slice(0,16);
+    document.getElementById("max_participantes").value = t.max_participantes || 8;
+    document.getElementById("premio").value = t.premio || "";
+    document.getElementById("precio_inscripcion").value = t.precio_inscripcion || 0;
+}
+
+async function guardarCambios() {
+    const msg = document.getElementById("mensaje");
+    const body = {
+        nombre: document.getElementById("nombre").value,
+        descripcion: document.getElementById("descripcion").value,
+        tipo: document.getElementById("tipo").value,
+        estado: document.getElementById("estado").value,
+        fecha_inicio: document.getElementById("fecha_inicio").value,
+        fecha_fin: document.getElementById("fecha_fin").value,
+        max_participantes: parseInt(document.getElementById("max_participantes").value) || 8,
+        premio: document.getElementById("premio").value,
+        precio_inscripcion: parseFloat(document.getElementById("precio_inscripcion").value) || 0
+    };
+
+    const res = await fetch(`/api/torneos/${id_torneo}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+        msg.className = "mensaje exito";
+        msg.textContent = "Torneo actualizado correctamente, redirigiendo...";
+        setTimeout(() => window.location.href = "torneos.html", 1500);
+    } else {
+        msg.className = "mensaje error";
+        msg.textContent = data.error;
+    }
+}
+
+async function borrarTorneo() {
+    if (!confirm("¿Seguro que quieres eliminar este torneo? Esta acción no se puede deshacer.")) return;
+    const msg = document.getElementById("mensaje");
+
+    const res = await fetch(`/api/torneos/${id_torneo}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+        msg.className = "mensaje exito";
+        msg.textContent = "Torneo eliminado, redirigiendo...";
+        setTimeout(() => window.location.href = "torneos.html", 1500);
+    } else {
+        msg.className = "mensaje error";
+        msg.textContent = data.error;
+    }
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+}
+
+cargarTorneo();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

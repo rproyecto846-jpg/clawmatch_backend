@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Comunidades</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .comunidad-card {
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #2a2a4a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .comunidad-card:hover { border-color: #e94560; }
+        .comunidad-info p { color: #aaa; font-size: 0.9rem; margin-top: 0.25rem; }
+        .miembros-badge {
+            background: #2a2a4a;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #e0e0e0;
+        }
+        .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        .tab {
+            padding: 0.6rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #2a2a4a;
+            color: #e0e0e0;
+            border: none;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .tab.active, .tab:hover { background: #e94560; color: white; }
+        .seccion { display: none; }
+        .seccion.activa { display: block; }
+        .form-crear { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; }
+        .form-full { grid-column: 1 / -1; }
+        label { display: block; color: #aaa; font-size: 0.85rem; margin-bottom: 0.25rem; margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <div class="card">
+        <h2>🌐 Comunidades</h2>
+        <div id="mensaje" class="mensaje"></div>
+        <div class="tabs">
+            <button class="tab active" onclick="cambiarTab('explorar', event)">🔍 Explorar</button>
+            <button class="tab" onclick="cambiarTab('mis-comunidades', event)">⭐ Mis comunidades</button>
+            <button class="tab" onclick="cambiarTab('crear', event)">➕ Crear comunidad</button>
+        </div>
+
+        <!-- EXPLORAR -->
+        <div id="tab-explorar" class="seccion activa">
+            <div id="lista-comunidades">Cargando...</div>
+        </div>
+
+        <!-- MIS COMUNIDADES -->
+        <div id="tab-mis-comunidades" class="seccion">
+            <div id="lista-mis-comunidades">Cargando...</div>
+        </div>
+
+        <!-- CREAR -->
+        <div id="tab-crear" class="seccion">
+            <div class="form-crear">
+                <div class="form-full">
+                    <label>Nombre de la comunidad *</label>
+                    <input type="text" id="c-nombre" placeholder="Ej: Fans de League of Legends">
+                </div>
+                <div class="form-full">
+                    <label>Descripción</label>
+                    <input type="text" id="c-descripcion" placeholder="Descripción de la comunidad">
+                </div>
+                <div class="form-full">
+    <label>Juego *</label>
+    <select id="c-juego" onchange="toggleJuegoCustomComunidad()">
+        <option value="">Cargando juegos...</option>
+    </select>
+    	<div id="juego-custom-comunidad" style="display:none">
+        	<label>Nombre del juego *</label>
+        		<input type="text" id="c-juego-nombre" placeholder="Ej: Minecraft">
+        			<label>Plataforma</label>
+        		<input type="text" id="c-juego-plataforma" placeholder="Ej: PC, PS5, Xbox...">
+        			<label>Género</label>
+        		<input type="text" id="c-juego-genero" placeholder="Ej: Shooter, MOBA, Plataformas...">
+    			</div>
+		</div>
+            <br>
+            <button onclick="crearComunidad()">Crear comunidad</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+let usuarioActual = null;
+
+async function init() {
+    const res = await fetch("/api/auth/perfil", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    usuarioActual = await res.json();
+    if (usuarioActual.rol === "administrador") {
+        document.getElementById("link-admin").style.display = "inline";
+    }
+    cargarComunidades();
+    cargarJuegos();
+}
+
+function cambiarTab(tab, event) {
+    document.querySelectorAll(".seccion").forEach(s => s.classList.remove("activa"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.getElementById(`tab-${tab}`).classList.add("activa");
+    event.target.classList.add("active");
+    if (tab === "explorar") cargarComunidades();
+    if (tab === "mis-comunidades") cargarMisComunidades();
+}
+
+function mostrarMensaje(texto, tipo) {
+    const msg = document.getElementById("mensaje");
+    msg.className = `mensaje ${tipo}`;
+    msg.textContent = texto;
+    setTimeout(() => msg.className = "mensaje", 3000);
+}
+
+async function cargarComunidades() {
+    const res = await fetch("/api/comunidades", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const comunidades = await res.json();
+    const div = document.getElementById("lista-comunidades");
+
+    if (comunidades.length === 0) {
+        div.innerHTML = "<p style='color:#aaa'>No hay comunidades aún. ¡Crea la primera!</p>";
+        return;
+    }
+
+    div.innerHTML = comunidades.map(c => `
+        <div class="comunidad-card" onclick="window.location.href='comunidad.html?id=${c.id_comunidad}'">
+            <div class="comunidad-info">
+                <h3>${c.nombre}</h3>
+                <p>${c.descripcion || ""}</p>
+                <p>🎮 ${c.juego} · 👤 Creada por ${c.creador_nombre}</p>
+            </div>
+            <div style="text-align:right">
+                <span class="miembros-badge">👥 ${c.total_miembros} miembros</span>
+            </div>
+        </div>
+    `).join("");
+}
+
+async function cargarMisComunidades() {
+    const res = await fetch("/api/comunidades/mis-comunidades", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const comunidades = await res.json();
+    const div = document.getElementById("lista-mis-comunidades");
+
+    if (comunidades.length === 0) {
+        div.innerHTML = "<p style='color:#aaa'>No perteneces a ninguna comunidad aún.</p>";
+        return;
+    }
+
+    div.innerHTML = comunidades.map(c => `
+        <div class="comunidad-card" onclick="window.location.href='comunidad.html?id=${c.id_comunidad}'">
+            <div class="comunidad-info">
+                <h3>${c.nombre}</h3>
+                <p>🎮 ${c.juego}</p>
+            </div>
+            <div style="text-align:right">
+                <span class="badge ${c.rol === 'moderador' ? 'abierto' : 'en_curso'}">${c.rol}</span>
+            </div>
+        </div>
+    `).join("");
+}
+
+function toggleJuegoCustomComunidad() {
+    const val = document.getElementById("c-juego").value;
+    document.getElementById("juego-custom-comunidad").style.display = val === "otro" ? "block" : "none";
+}
+
+async function cargarJuegos() {
+    const res = await fetch("/api/juegos", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const juegos = await res.json();
+    const select = document.getElementById("c-juego");
+    select.innerHTML = `<option value="" disabled selected>Selecciona juego</option>` +
+        juegos.map(j => `<option value="${j.id_juego}">${j.nombre}</option>`).join("") +
+        `<option value="otro">➕ Otro (añadir nuevo)</option>`;
+}
+
+async function crearComunidad() {
+    const nombre = document.getElementById("c-nombre").value;
+    let id_juego = document.getElementById("c-juego").value;
+    const msg = document.getElementById("mensaje");
+
+    if (!nombre || !id_juego) {
+        mostrarMensaje("Rellena todos los campos obligatorios", "error");
+        return;
+    }
+
+    if (id_juego === "otro") {
+        const juegoNombre = document.getElementById("c-juego-nombre").value;
+        if (!juegoNombre) {
+            mostrarMensaje("Escribe el nombre del juego", "error");
+            return;
+        }
+        const resJuego = await fetch("/api/juegos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({
+                nombre: juegoNombre,
+                plataforma: document.getElementById("c-juego-plataforma").value,
+                genero: document.getElementById("c-juego-genero").value
+            })
+        });
+        const dataJuego = await resJuego.json();
+        if (!resJuego.ok) {
+            mostrarMensaje(dataJuego.error, "error");
+            return;
+        }
+        id_juego = dataJuego.id_juego;
+    }
+
+    const res = await fetch("/api/comunidades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({
+            nombre,
+            descripcion: document.getElementById("c-descripcion").value,
+            id_juego: parseInt(id_juego)
+        })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+        mostrarMensaje("Comunidad creada correctamente", "exito");
+        setTimeout(() => window.location.href = `comunidad.html?id=${data.id_comunidad}`, 1500);
+    } else {
+        mostrarMensaje(data.error, "error");
+    }
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+}
+
+init();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

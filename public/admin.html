@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Panel Admin</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .tab {
+            padding: 0.6rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #2a2a4a;
+            color: #e0e0e0;
+            border: none;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .tab.active, .tab:hover { background: #e94560; color: white; }
+        .seccion { display: none; }
+        .seccion.activa { display: block; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #e94560; color: white; padding: 0.75rem; text-align: left; }
+        td { padding: 0.75rem; border-bottom: 1px solid #2a2a4a; vertical-align: middle; }
+        tr:hover td { background: #1a1a2e; }
+        .acciones { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 4px; }
+        .btn-warning { background: #ff9800; }
+        .btn-warning:hover { background: #e68900; }
+        .btn-danger { background: #f44336; }
+        .btn-danger:hover { background: #d32f2f; }
+        .btn-info { background: #2196f3; }
+        .btn-info:hover { background: #1976d2; }
+        .btn-success { background: #4caf50; }
+        .btn-success:hover { background: #388e3c; }
+        .estado-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .activo { background: #1a4a2a; color: #4caf50; }
+        .suspendido { background: #4a3a1a; color: #ff9800; }
+        .baneado { background: #4a1a1a; color: #f44336; }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.visible { display: flex; }
+        .modal {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid #2a2a4a;
+        }
+        .modal h3 { color: #e94560; margin-bottom: 1rem; }
+        .modal-btns { display: flex; gap: 1rem; margin-top: 1rem; justify-content: flex-end; }
+        .log-fila-exito td { color: #4caf50; }
+        .log-fila-fallo td { color: #f44336; }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="card">
+        <h2>⚙️ Panel de Administración</h2>
+        <div id="mensaje" class="mensaje"></div>
+        <div class="tabs">
+            <button class="tab active" onclick="cambiarTab('usuarios')">👥 Usuarios</button>
+            <button class="tab" onclick="cambiarTab('torneos')">🏆 Torneos</button>
+            <button class="tab" onclick="cambiarTab('logs')">📋 Logs de acceso</button>
+        </div>
+
+        <!-- USUARIOS -->
+        <div id="tab-usuarios" class="seccion activa">
+            <table id="tabla-usuarios">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="body-usuarios"></tbody>
+            </table>
+        </div>
+
+        <!-- TORNEOS -->
+        <div id="tab-torneos" class="seccion">
+            <table id="tabla-torneos">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                        <th>Creador</th>
+                        <th>Inicio</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="body-torneos"></tbody>
+            </table>
+        </div>
+
+        <!-- LOGS -->
+        <div id="tab-logs" class="seccion">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>IP</th>
+                        <th>Resultado</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="body-logs"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL BANEAR -->
+<div id="modal-banear" class="modal-overlay">
+    <div class="modal">
+        <h3>🚫 Banear usuario</h3>
+        <p style="color:#aaa;margin-bottom:1rem">Introduce la IP para banear por IP (opcional)</p>
+        <input type="text" id="ban-ip" placeholder="IP del usuario (opcional)">
+        <div class="modal-btns">
+            <button class="btn-secondary" onclick="cerrarModal('modal-banear')">Cancelar</button>
+            <button class="btn-danger" onclick="confirmarBan()">Banear</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR TORNEO -->
+<div id="modal-torneo" class="modal-overlay">
+    <div class="modal">
+        <h3>✏️ Editar torneo</h3>
+        <input type="hidden" id="edit-torneo-id">
+        <input type="text" id="edit-nombre" placeholder="Nombre">
+        <input type="text" id="edit-descripcion" placeholder="Descripción">
+        <input type="datetime-local" id="edit-fecha-inicio">
+        <input type="datetime-local" id="edit-fecha-fin">
+        <input type="text" id="edit-premio" placeholder="Premio">
+        <select id="edit-estado">
+            <option value="abierto">Abierto</option>
+            <option value="en_curso">En curso</option>
+            <option value="finalizado">Finalizado</option>
+        </select>
+        <div class="modal-btns">
+            <button class="btn-secondary" onclick="cerrarModal('modal-torneo')">Cancelar</button>
+            <button onclick="guardarTorneo()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+// Verificar que es admin
+async function verificarAdmin() {
+    const res = await fetch("/api/auth/perfil", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const user = await res.json();
+    if (user.rol !== "administrador") window.location.href = "torneos.html";
+}
+
+function cambiarTab(tab) {
+    document.querySelectorAll(".seccion").forEach(s => s.classList.remove("activa"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.getElementById(`tab-${tab}`).classList.add("activa");
+    event.target.classList.add("active");
+    if (tab === "usuarios") cargarUsuarios();
+    if (tab === "torneos") cargarTorneos();
+    if (tab === "logs") cargarLogs();
+}
+
+function mostrarMensaje(texto, tipo) {
+    const msg = document.getElementById("mensaje");
+    msg.className = `mensaje ${tipo}`;
+    msg.textContent = texto;
+    setTimeout(() => msg.className = "mensaje", 3000);
+}
+
+// USUARIOS
+async function cargarUsuarios() {
+    const res = await fetch("/api/admin/usuarios", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const usuarios = await res.json();
+    document.getElementById("body-usuarios").innerHTML = usuarios.map(u => `
+        <tr>
+            <td>${u.id_usuario}</td>
+            <td><b>${u.nombre_usuario}</b></td>
+            <td>${u.email}</td>
+            <td>
+                <select onchange="cambiarRol(${u.id_usuario}, this.value)" style="width:auto;margin:0;padding:0.3rem">
+                    <option value="usuario" ${u.rol === "usuario" ? "selected" : ""}>Usuario</option>
+                    <option value="administrador" ${u.rol === "administrador" ? "selected" : ""}>Admin</option>
+                </select>
+            </td>
+            <td><span class="estado-badge ${u.estado}">${u.estado}</span></td>
+            <td style="color:#aaa;font-size:0.85rem">${new Date(u.fecha_registro).toLocaleDateString()}</td>
+            <td>
+                <div class="acciones">
+                    ${u.estado !== "suspendido" ? `<button class="btn-sm btn-warning" onclick="cambiarEstado(${u.id_usuario}, 'suspendido')">Suspender</button>` : `<button class="btn-sm btn-success" onclick="cambiarEstado(${u.id_usuario}, 'activo')">Activar</button>`}
+                    ${u.estado !== "baneado" ? `<button class="btn-sm btn-danger" onclick="abrirModalBan(${u.id_usuario})">Banear</button>` : ""}
+                    <button class="btn-sm btn-danger" onclick="eliminarUsuario(${u.id_usuario}, '${u.nombre_usuario}')">Eliminar</button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
+}
+
+async function cambiarEstado(id, estado) {
+    const res = await fetch(`/api/admin/usuarios/${id}/estado`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ estado })
+    });
+    const data = await res.json();
+    mostrarMensaje(data.message || data.error, res.ok ? "exito" : "error");
+    cargarUsuarios();
+}
+
+async function cambiarRol(id, rol) {
+    const res = await fetch(`/api/admin/usuarios/${id}/rol`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ rol })
+    });
+    const data = await res.json();
+    mostrarMensaje(data.message || data.error, res.ok ? "exito" : "error");
+}
+
+let banUsuarioId = null;
+function abrirModalBan(id) {
+    banUsuarioId = id;
+    document.getElementById("ban-ip").value = "";
+    document.getElementById("modal-banear").classList.add("visible");
+}
+
+async function confirmarBan() {
+    const ip = document.getElementById("ban-ip").value;
+    const res = await fetch(`/api/admin/usuarios/${banUsuarioId}/banear`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ ip })
+    });
+    const data = await res.json();
+    cerrarModal("modal-banear");
+    mostrarMensaje(data.message || data.error, res.ok ? "exito" : "error");
+    cargarUsuarios();
+}
+
+async function eliminarUsuario(id, nombre) {
+    if (!confirm(`¿Seguro que quieres eliminar a ${nombre}? Esta acción no se puede deshacer.`)) return;
+    const res = await fetch(`/api/admin/usuarios/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    mostrarMensaje(data.message || data.error, res.ok ? "exito" : "error");
+    cargarUsuarios();
+}
+
+// TORNEOS
+async function cargarTorneos() {
+    const res = await fetch("/api/torneos", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const torneos = await res.json();
+    document.getElementById("body-torneos").innerHTML = torneos.map(t => `
+        <tr>
+            <td>${t.id_torneo}</td>
+            <td><b>${t.nombre}</b></td>
+            <td><span class="badge ${t.estado}">${t.estado}</span></td>
+            <td>${t.nombre_usuario}</td>
+            <td style="color:#aaa;font-size:0.85rem">${new Date(t.fecha_inicio).toLocaleDateString()}</td>
+            <td>
+                <div class="acciones">
+                    <button class="btn-sm btn-info" onclick="abrirEditarTorneo(${t.id_torneo}, '${t.nombre}', '${t.descripcion || ""}', '${t.fecha_inicio}', '${t.fecha_fin}', '${t.premio || ""}', '${t.estado}')">Editar</button>
+                    <button class="btn-sm btn-danger" onclick="eliminarTorneo(${t.id_torneo}, '${t.nombre}')">Borrar</button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
+}
+
+function abrirEditarTorneo(id, nombre, desc, inicio, fin, premio, estado) {
+    document.getElementById("edit-torneo-id").value = id;
+    document.getElementById("edit-nombre").value = nombre;
+    document.getElementById("edit-descripcion").value = desc;
+    document.getElementById("edit-fecha-inicio").value = new Date(inicio).toISOString().slice(0,16);
+    document.getElementById("edit-fecha-fin").value = new Date(fin).toISOString().slice(0,16);
+    document.getElementById("edit-premio").value = premio;
+    document.getElementById("edit-estado").value = estado;
+    document.getElementById("modal-torneo").classList.add("visible");
+}
+
+async function guardarTorneo() {
+    const id = document.getElementById("edit-torneo-id").value;
+    const body = {
+        nombre: document.getElementById("edit-nombre").value,
+        descripcion: document.getElementById("edit-descripcion").value,
+        fecha_inicio: document.getElementById("edit-fecha-inicio").value,
+        fecha_fin: document.getElementById("edit-fecha-fin").value,
+        premio: document.getElementById("edit-premio").value,
+        estado: document.getElementById("edit-estado").value,
+    };
+    const res = await fetch(`/api/admin/torneos/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    cerrarModal("modal-torneo");
+    mostrarMensaje(data.message || data.error, res.ok ? "exito" : "error");
+    cargarTorneos();
+}
+
+async function eliminarTorneo(id, nombre) {
+    if (!confirm(`¿Seguro que quieres eliminar el torneo "${nombre}"?`)) return;
+    const res = await fetch(`/api/admin/torneos/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const data = await res.json();
+    mostrarMensaje(data.message || data.error, res.ok ? "exito" : "error");
+    cargarTorneos();
+}
+
+// LOGS
+async function cargarLogs() {
+    const res = await fetch("/api/admin/logs", {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    const logs = await res.json();
+    document.getElementById("body-logs").innerHTML = logs.map(l => `
+        <tr class="log-fila-${l.resultado}">
+            <td>${l.nombre_usuario}</td>
+            <td>${l.ip || "-"}</td>
+            <td>${l.resultado}</td>
+            <td>${new Date(l.fecha_hora).toLocaleString()}</td>
+        </tr>
+    `).join("");
+}
+
+function cerrarModal(id) {
+    document.getElementById(id).classList.remove("visible");
+}
+
+function logout() {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+}
+
+verificarAdmin();
+cargarUsuarios();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

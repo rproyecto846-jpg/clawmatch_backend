@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Mi Perfil</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .perfil-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .banner-header {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(135deg, #1a1a2e, #2a2a4a);
+            background-size: cover;
+            background-position: center;
+            border-radius: 12px 12px 0 0;
+            display: none;
+        }
+        .perfil-body {
+            background: #1a1a2e;
+            padding: 1.5rem;
+            border-radius: 0 0 12px 12px;
+            border: 1px solid #2a2a4a;
+        }
+        .perfil-header { display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap; }
+        .avatar-container { position: relative; width: 100px; height: 100px; flex-shrink: 0; margin-top: -50px; }
+        .avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #e94560; background: #2a2a4a; }
+        .avatar-placeholder { width: 100px; height: 100px; border-radius: 50%; background: #2a2a4a; border: 3px solid #e94560; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+        .avatar-edit { position: absolute; bottom: 0; right: 0; background: #e94560; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 0.8rem; color: white; }
+        .perfil-info { flex: 1; }
+        .perfil-info h2 { font-size: 1.4rem; }
+        .nickname { color: #e94560; font-size: 1rem; margin-top: 0.2rem; }
+        .nivel-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-left: 0.5rem; }
+        .badge-normal { background: #2a2a4a; color: #aaa; }
+        .badge-pro { background: #e94560; color: white; }
+        .badge-premium { background: #ffd700; color: #0f0f1a; }
+        .tabs { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .tab { padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; background: #2a2a4a; color: #e0e0e0; border: none; font-size: 0.9rem; }
+        .tab.active, .tab:hover { background: #e94560; color: white; }
+        .seccion { display: none; }
+        .seccion.activa { display: block; }
+        label { display: block; color: #aaa; font-size: 0.85rem; margin-bottom: 0.25rem; margin-top: 0.75rem; }
+        .torneo-card { background: #0f0f1a; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; border: 1px solid #2a2a4a; display: flex; justify-content: space-between; align-items: center; }
+        .notif { padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; background: #0f0f1a; border-left: 3px solid #e94560; font-size: 0.9rem; color: #aaa; cursor: pointer; }
+        .notif.leida { border-left-color: #2a2a4a; color: #666; }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .abierto { background: #1a4a2a; color: #4caf50; }
+        .en_curso { background: #4a3a1a; color: #ff9800; }
+        .finalizado { background: #4a1a1a; color: #f44336; }
+        .bloqueo-aviso { background: #2a2a4a; border-radius: 8px; padding: 0.75rem 1rem; color: #aaa; font-size: 0.85rem; margin-top: 0.75rem; }
+        .bloqueo-aviso a { color: #e94560; }
+        .color-opcion { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: transform 0.2s; }
+        .color-opcion:hover { transform: scale(1.2); }
+        .color-opcion.seleccionado { border-color: white; transform: scale(1.1); }
+        .colores-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+        .fuente-opcion { background: #2a2a4a; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 1rem; border: 2px solid transparent; }
+        .fuente-opcion:hover { border-color: #e94560; }
+        .fuente-opcion.seleccionado { border-color: #e94560; background: #3a1a2e; }
+        .fuentes-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+        .remarco-opcion { width: 50px; height: 50px; border-radius: 50%; background: #2a2a4a; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; border: 3px solid transparent; transition: transform 0.2s; }
+        .remarco-opcion:hover { transform: scale(1.1); }
+        .remarco-opcion.seleccionado { border-color: white; }
+        .remarcos-grid { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        .remarco-glow { box-shadow: 0 0 12px 4px #e94560, 0 0 0 3px #e94560; }
+        .remarco-patron-puntos { border: 4px dotted #e94560 !important; }
+        .remarco-patron-lineas { border: 4px dashed #e94560 !important; }
+        .remarco-degradado { border: 4px solid transparent !important; background: linear-gradient(#1a1a2e,#1a1a2e) padding-box, linear-gradient(135deg,#e94560,#9b59b6,#3498db) border-box; }
+        .remarco-dorado { border: 4px solid #ffd700 !important; box-shadow: 0 0 15px 4px #ffd700aa; animation: remarco-pulso 2s ease-in-out infinite; }
+        .remarco-animated { animation: remarco-rotate 3s linear infinite; }
+        @keyframes remarco-pulso { 0%,100% { box-shadow: 0 0 10px 3px #ffd700aa; } 50% { box-shadow: 0 0 25px 8px #ffd700cc; } }
+        @keyframes remarco-rotate { 0% { border-color: #e94560; } 33% { border-color: #9b59b6; } 66% { border-color: #3498db; } 100% { border-color: #e94560; } }
+        .banner-preview { margin-top: 0.75rem; display: none; }
+        .banner-preview img { width: 100%; max-height: 120px; object-fit: cover; border-radius: 8px; }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <!-- PERFIL HEADER -->
+    <div class="perfil-card" id="card-perfil">
+        <div id="banner-header" class="banner-header"></div>
+        <div class="perfil-body">
+            <div class="perfil-header">
+                <div class="avatar-container">
+                    <div id="avatar-display"></div>
+                    <button class="avatar-edit" onclick="document.getElementById('foto-input').click()">✏️</button>
+                    <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="subirFoto()">
+                </div>
+                <div class="perfil-info">
+                    <h2 id="display-nombre">-</h2>
+                    <div id="display-nickname" class="nickname"></div>
+                    <span id="nivel-badge-perfil" class="nivel-badge badge-normal">Normal</span>
+                    <p id="display-email" style="color:#aaa;margin-top:0.25rem"></p>
+                    <p id="display-fecha" style="color:#666;font-size:0.85rem"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mensaje" class="mensaje"></div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="cambiarTab('editar', event)">✏️ Editar perfil</button>
+        <button class="tab" onclick="cambiarTab('torneos', event)">🏆 Mis torneos</button>
+        <button class="tab" onclick="cambiarTab('notificaciones', event)">🔔 Notificaciones</button>
+        <button class="tab" onclick="cambiarTab('personalizacion', event)">🎨 Personalización</button>
+    </div>
+
+    <!-- EDITAR -->
+    <div id="tab-editar" class="seccion activa">
+        <div class="card">
+            <h2>✏️ Editar perfil</h2>
+            <label>Nickname</label>
+            <input type="text" id="edit-nickname" placeholder="Tu nickname visible">
+            <label>Teléfono</label>
+            <input type="text" id="edit-telefono" placeholder="+34 600 000 000">
+            <br><br>
+            <button onclick="guardarPerfil()">Guardar cambios</button>
+            <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #2a2a4a">
+                <h3>🔐 Verificación en dos pasos</h3>
+                <p style="color:#aaa;font-size:0.9rem;margin:0.5rem 0 1rem">Añade una capa extra de seguridad.</p>
+                <button id="btn-2fa" onclick="toggle2FA()">Cargando...</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TORNEOS -->
+    <div id="tab-torneos" class="seccion">
+        <div class="card">
+            <h2>🏆 Mis torneos</h2>
+            <div id="mis-torneos">Cargando...</div>
+        </div>
+    </div>
+
+    <!-- NOTIFICACIONES -->
+    <div id="tab-notificaciones" class="seccion">
+        <div class="card">
+            <h2>🔔 Notificaciones</h2>
+            <div id="notificaciones">Cargando...</div>
+        </div>
+    </div>
+
+    <!-- PERSONALIZACIÓN -->
+    <div id="tab-personalizacion" class="seccion">
+        <div class="card">
+            <h2>🎨 Personalización</h2>
+
+            <!-- COLOR DE FONDO -->
+            <h3 style="margin-top:1rem">🎨 Color de fondo del perfil</h3>
+            <p style="color:#aaa;font-size:0.85rem">Disponible para todos los planes.</p>
+            <div class="colores-grid" id="paleta-colores"></div>
+
+            <!-- BANNER -->
+            <div id="seccion-banner" style="margin-top:1.5rem;display:none">
+                <h3>🖼️ Banner del perfil</h3>
+                <p style="color:#aaa;font-size:0.85rem">Pega la URL de tu imagen de banner.</p>
+                <input type="text" id="banner-url" placeholder="https://...">
+                <div class="banner-preview" id="banner-preview">
+                    <img id="banner-img" src="">
+                </div>
+                <div id="seccion-banner-tipo" style="display:none;margin-top:0.75rem">
+                    <label>Tipo de banner:</label>
+                    <div style="display:flex;gap:1rem;margin-top:0.5rem">
+                        <label style="display:flex;align-items:center;gap:0.5rem;color:#e0e0e0;margin:0">
+                            <input type="radio" name="banner-tipo" value="youtube"> Estilo Banner
+                        </label>
+                        <label style="display:flex;align-items:center;gap:0.5rem;color:#e0e0e0;margin:0">
+                            <input type="radio" name="banner-tipo" value="steam"> Fondo Completo
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div id="aviso-banner" class="bloqueo-aviso">
+                🔒 El banner está disponible desde el plan <a href="suscripciones.html">Pro (9.99€/mes)</a>
+            </div>
+
+            <!-- REMARCOS -->
+            <div id="seccion-remarcos" style="margin-top:1.5rem;display:none">
+                <h3>🖼️ Remarco del avatar</h3>
+                <p style="color:#aaa;font-size:0.85rem">Elige el estilo del borde de tu foto de perfil.</p>
+                <div class="remarcos-grid" id="remarcos-lista"></div>
+            </div>
+            <div id="aviso-remarcos" class="bloqueo-aviso" style="margin-top:0.75rem">
+                🔒 Los remarcos están disponibles desde el plan <a href="suscripciones.html">Pro (9.99€/mes)</a>
+            </div>
+
+            <!-- PREMIUM -->
+            <div id="seccion-premium" style="margin-top:1.5rem;display:none">
+                <h3>👑 Opciones Premium</h3>
+                <label>Color de acento</label>
+                <input type="color" id="color-acento" value="#e94560" style="width:60px;height:40px;padding:2px;cursor:pointer">
+                <label>Fuente</label>
+                <div class="fuentes-grid" id="fuentes-lista"></div>
+            </div>
+            <div id="aviso-premium" class="bloqueo-aviso" style="margin-top:0.75rem">
+                👑 Colores y fuentes disponibles en el plan <a href="suscripciones.html">Premium (19.99€/mes)</a>
+            </div>
+
+            <br>
+            <button onclick="guardarPersonalizacion()">💾 Guardar personalización</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+let usuarioActual = null;
+
+const COLORES_PALETA = [
+    "#0f0f1a", "#1a1a2e", "#16213e", "#1a2a1a", "#2a1a1a",
+    "#1a1a3a", "#0d1b2a", "#1b1a2e", "#2a2a1a", "#1a2a2a"
+];
+
+const FUENTES = ["Segoe UI", "Roboto", "Orbitron", "Press Start 2P", "Exo 2", "Rajdhani"];
+
+const REMARCOS = [
+    { id: "ninguno", label: "Sin remarco", clase: "", emoji: "⬜" },
+    { id: "glow", label: "Glow", clase: "remarco-glow", emoji: "✨" },
+    { id: "animated", label: "Animado", clase: "remarco-animated", emoji: "🌀" },
+    { id: "puntos", label: "Puntos", clase: "remarco-patron-puntos", emoji: "🔴" },
+    { id: "lineas", label: "Líneas", clase: "remarco-patron-lineas", emoji: "〰️" },
+    { id: "degradado", label: "Degradado", clase: "remarco-degradado", emoji: "🌈" },
+    { id: "dorado", label: "Dorado Premium", clase: "remarco-dorado", emoji: "👑", soloPremiun: true }
+];
+
+async function init() {
+    const res = await fetch("/api/auth/perfil", { headers: { "Authorization": `Bearer ${token}` } });
+    usuarioActual = await res.json();
+
+    if (usuarioActual.rol === "administrador") document.getElementById("link-admin").style.display = "inline";
+
+    // Avatar
+    const avatarDiv = document.getElementById("avatar-display");
+    const remarcoClase = REMARCOS.find(r => r.id === (usuarioActual.remarco || "ninguno"))?.clase || "";
+    if (usuarioActual.foto_perfil) {
+        avatarDiv.innerHTML = `<img src="${usuarioActual.foto_perfil}" class="avatar ${remarcoClase}">`;
+    } else {
+        avatarDiv.innerHTML = `<div class="avatar-placeholder ${remarcoClase}">👤</div>`;
+    }
+
+    // Info
+    document.getElementById("display-nombre").textContent = usuarioActual.nombre_usuario;
+    document.getElementById("display-nickname").textContent = usuarioActual.nickname ? `"${usuarioActual.nickname}"` : "";
+    document.getElementById("display-email").textContent = `📧 ${usuarioActual.email}`;
+    document.getElementById("display-fecha").textContent = `📅 Miembro desde ${new Date(usuarioActual.fecha_registro).toLocaleDateString()}`;
+    document.getElementById("edit-nickname").value = usuarioActual.nickname || "";
+    document.getElementById("edit-telefono").value = usuarioActual.telefono || "";
+
+    // Suscripción
+    const resSus = await fetch("/api/suscripciones/mi-suscripcion", { headers: { "Authorization": `Bearer ${token}` } });
+    const sus = await resSus.json();
+    const nivel = sus.nombre || "Normal";
+    usuarioActual.nombre_plan = nivel;
+
+    const badge = document.getElementById("nivel-badge-perfil");
+    badge.textContent = nivel;
+    badge.className = `nivel-badge badge-${nivel.toLowerCase()}`;
+
+    // Banner
+    const bannerEl = document.getElementById("banner-header");
+    if (usuarioActual.banner_url && (nivel === "Pro" || nivel === "Premium")) {
+        bannerEl.style.backgroundImage = `url('${usuarioActual.banner_url}')`;
+        bannerEl.style.display = "block";
+        if (usuarioActual.banner_tipo === "steam") {
+            bannerEl.style.position = "absolute";
+            bannerEl.style.inset = "0";
+            bannerEl.style.height = "100%";
+            bannerEl.style.zIndex = "0";
+            document.getElementById("card-perfil").style.position = "relative";
+        }
+    }
+
+    // Color perfil
+    if (usuarioActual.color_perfil) {
+        document.getElementById("card-perfil").querySelector(".perfil-body").style.background = usuarioActual.color_perfil;
+    }
+
+    cargar2FA();
+    iniciarPersonalizacion(usuarioActual);
+}
+
+function iniciarPersonalizacion(usuario) {
+    const nivel = usuario.nombre_plan || "Normal";
+
+    // Paleta colores
+    const paleta = document.getElementById("paleta-colores");
+    paleta.innerHTML = COLORES_PALETA.map(c => `
+        <div class="color-opcion ${usuario.color_perfil === c ? 'seleccionado' : ''}"
+             style="background:${c}" title="${c}"
+             onclick="seleccionarColor('${c}', this)"></div>
+    `).join("");
+
+    // Banner
+    if (nivel === "Pro" || nivel === "Premium") {
+        document.getElementById("seccion-banner").style.display = "block";
+        document.getElementById("aviso-banner").style.display = "none";
+        if (usuario.banner_url) {
+            document.getElementById("banner-url").value = usuario.banner_url;
+            document.getElementById("banner-img").src = usuario.banner_url;
+            document.getElementById("banner-preview").style.display = "block";
+        }
+        if (nivel === "Premium") {
+            document.getElementById("seccion-banner-tipo").style.display = "block";
+            document.querySelectorAll("input[name='banner-tipo']").forEach(r => {
+                r.checked = r.value === (usuario.banner_tipo || "youtube");
+            });
+        }
+    } else {
+        document.getElementById("seccion-banner").style.display = "none";
+        document.getElementById("aviso-banner").style.display = "block";
+    }
+
+    // Remarcos
+    if (nivel === "Pro" || nivel === "Premium") {
+        document.getElementById("seccion-remarcos").style.display = "block";
+        document.getElementById("aviso-remarcos").style.display = "none";
+        const remarcoActual = usuario.remarco || "ninguno";
+        const lista = document.getElementById("remarcos-lista");
+        lista.innerHTML = REMARCOS
+            .filter(r => !r.soloPremiun || nivel === "Premium")
+            .map(r => `
+                <div class="remarco-opcion ${remarcoActual === r.id ? 'seleccionado' : ''}"
+                     title="${r.label}"
+                     onclick="seleccionarRemarco('${r.id}', this)">
+                    <span>${r.emoji}</span>
+                </div>
+            `).join("");
+    } else {
+        document.getElementById("seccion-remarcos").style.display = "none";
+        document.getElementById("aviso-remarcos").style.display = "block";
+    }
+
+    // Premium
+    if (nivel === "Premium") {
+        document.getElementById("seccion-premium").style.display = "block";
+        document.getElementById("aviso-premium").style.display = "none";
+        document.getElementById("color-acento").value = usuario.color_acento || "#e94560";
+        const fuentesDiv = document.getElementById("fuentes-lista");
+        fuentesDiv.innerHTML = FUENTES.map(f => `
+            <div class="fuente-opcion ${(usuario.fuente || "Segoe UI") === f ? 'seleccionado' : ''}"
+                 style="font-family:'${f}'"
+                 onclick="seleccionarFuente('${f}', this)">${f}</div>
+        `).join("");
+    } else {
+        document.getElementById("seccion-premium").style.display = "none";
+        document.getElementById("aviso-premium").style.display = "block";
+    }
+
+    // Preview banner
+    document.getElementById("banner-url")?.addEventListener("input", function() {
+        const preview = document.getElementById("banner-preview");
+        const img = document.getElementById("banner-img");
+        if (this.value) { img.src = this.value; preview.style.display = "block"; }
+        else { preview.style.display = "none"; }
+    });
+}
+
+function seleccionarColor(color, el) {
+    document.querySelectorAll(".color-opcion").forEach(c => c.classList.remove("seleccionado"));
+    el.classList.add("seleccionado");
+    document.getElementById("card-perfil").querySelector(".perfil-body").style.background = color;
+}
+
+function seleccionarFuente(fuente, el) {
+    document.querySelectorAll(".fuente-opcion").forEach(f => f.classList.remove("seleccionado"));
+    el.classList.add("seleccionado");
+    document.body.style.fontFamily = fuente;
+}
+
+function seleccionarRemarco(id, el) {
+    document.querySelectorAll(".remarco-opcion").forEach(r => r.classList.remove("seleccionado"));
+    el.classList.add("seleccionado");
+    const avatar = document.querySelector(".avatar, .avatar-placeholder");
+    if (avatar) {
+        REMARCOS.forEach(r => { if(r.clase) avatar.classList.remove(r.clase); });
+        const remarco = REMARCOS.find(r => r.id === id);
+        if (remarco?.clase) avatar.classList.add(remarco.clase);
+    }
+}
+
+async function guardarPersonalizacion() {
+    const colorSeleccionado = document.querySelector(".color-opcion.seleccionado")?.title;
+    const bannerUrl = document.getElementById("banner-url")?.value || null;
+    const bannerTipo = document.querySelector("input[name='banner-tipo']:checked")?.value || "youtube";
+    const colorAcento = usuarioActual.nombre_plan === "Premium" ? (document.getElementById("color-acento")?.value || null) : null;
+const fuenteSeleccionada = usuarioActual.nombre_plan === "Premium" ? (document.querySelector(".fuente-opcion.seleccionado")?.textContent || null) : null;
+    const remarcoSeleccionado = document.querySelector(".remarco-opcion.seleccionado")?.title;
+    const remarcoId = REMARCOS.find(r => r.label === remarcoSeleccionado)?.id || "ninguno";
+
+    const body = {
+        color_perfil: colorSeleccionado || null,
+        banner_url: bannerUrl,
+        banner_tipo: bannerTipo,
+        color_acento: colorAcento,
+        fuente: fuenteSeleccionada,
+        remarco: remarcoId
+    };
+
+    const res = await fetch("/api/auth/perfil/personalizacion", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    mostrarMensaje(data.message || data.error, res.ok ? "exito" : "error");
+}
+
+async function subirFoto() {
+    const file = document.getElementById("foto-input").files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("foto", file);
+    const res = await fetch("/api/auth/perfil/foto", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: formData
+    });
+    const data = await res.json();
+    if (res.ok) {
+        mostrarMensaje("Foto actualizada", "exito");
+        document.getElementById("avatar-display").innerHTML = `<img src="${data.foto_perfil}" class="avatar">`;
+    } else {
+        mostrarMensaje(data.error, "error");
+    }
+}
+
+async function guardarPerfil() {
+    const res = await fetch("/api/auth/perfil", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({
+            nickname: document.getElementById("edit-nickname").value,
+            telefono: document.getElementById("edit-telefono").value
+        })
+    });
+    const data = await res.json();
+    mostrarMensaje(data.message || data.error, res.ok ? "exito" : "error");
+    if (res.ok) init();
+}
+
+async function cargarMisTorneos() {
+    const res = await fetch("/api/torneos/mis-inscripciones", { headers: { "Authorization": `Bearer ${token}` } });
+    const torneos = await res.json();
+    const div = document.getElementById("mis-torneos");
+    if (torneos.length === 0) { div.innerHTML = "<p style='color:#aaa'>No estás inscrito en ningún torneo.</p>"; return; }
+    div.innerHTML = torneos.map(t => `
+        <div class="torneo-card">
+            <div>
+                <b style="cursor:pointer;color:#e94560" onclick="window.location.href='detalle-torneo.html?id=${t.id_torneo}'">${t.nombre}</b>
+                <p style="color:#aaa;font-size:0.85rem">📅 ${new Date(t.fecha_inicio).toLocaleDateString()} — ${new Date(t.fecha_fin).toLocaleDateString()}</p>
+            </div>
+            <span class="badge ${t.estado}">${t.estado}</span>
+        </div>
+    `).join("");
+}
+
+async function cargarNotificaciones() {
+    const res = await fetch("/api/notificaciones", { headers: { "Authorization": `Bearer ${token}` } });
+    const notifs = await res.json();
+    const div = document.getElementById("notificaciones");
+    if (notifs.length === 0) { div.innerHTML = "<p style='color:#aaa'>Sin notificaciones.</p>"; return; }
+    div.innerHTML = notifs.map(n => `
+        <div class="notif ${n.leido ? 'leida' : ''}" onclick="marcarLeida(${n.id_notificacion}, this)">
+            ${n.contenido} <small style="float:right">${new Date(n.fecha_envio).toLocaleString()}</small>
+        </div>
+    `).join("");
+}
+
+async function marcarLeida(id, el) {
+    await fetch(`/api/notificaciones/${id}/leer`, { method: "PATCH", headers: { "Authorization": `Bearer ${token}` } });
+    el.classList.add("leida");
+}
+
+async function cargar2FA() {
+    const res = await fetch("/api/auth/perfil", { headers: { "Authorization": `Bearer ${token}` } });
+    const user = await res.json();
+    const btn = document.getElementById("btn-2fa");
+    if (btn) {
+        btn.textContent = user.two_fa_activo ? "🔐 Desactivar 2FA" : "🔓 Activar 2FA";
+        btn.style.background = user.two_fa_activo ? "#4caf50" : "#2a2a4a";
+    }
+}
+
+async function toggle2FA() {
+    const res = await fetch("/api/auth/2fa/toggle", { method: "POST", headers: { "Authorization": `Bearer ${token}` } });
+    const data = await res.json();
+    mostrarMensaje(data.message, res.ok ? "exito" : "error");
+    if (res.ok) cargar2FA();
+}
+
+function cambiarTab(tab, event) {
+    document.querySelectorAll(".seccion").forEach(s => s.classList.remove("activa"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.getElementById(`tab-${tab}`).classList.add("activa");
+    event.target.classList.add("active");
+    if (tab === "torneos") cargarMisTorneos();
+    if (tab === "notificaciones") cargarNotificaciones();
+}
+
+function mostrarMensaje(texto, tipo) {
+    const msg = document.getElementById("mensaje");
+    msg.className = `mensaje ${tipo}`;
+    msg.textContent = texto;
+    setTimeout(() => msg.className = "mensaje", 3000);
+}
+
+function logout() { localStorage.removeItem("token"); window.location.href = "login.html"; }
+
+init();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

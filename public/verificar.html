@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Verificar cuenta</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .codigo-input { display:flex; gap:0.5rem; justify-content:center; margin-bottom:1rem; }
+        .codigo-input input { width:45px; height:55px; text-align:center; font-size:1.5rem; font-weight:bold; padding:0; border-radius:8px; }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div><a href="login.html">Login</a></div>
+</nav>
+<div class="container">
+    <div class="card" style="max-width:450px;margin:3rem auto;text-align:center">
+        <h2>Verifica tu cuenta</h2>
+        <p style="color:#aaa;margin-bottom:1.5rem">Introduce el código enviado a <b id="email-display"></b></p>
+        <div id="mensaje" class="mensaje"></div>
+        <div class="codigo-input">
+            <input type="text" maxlength="1" id="c1" oninput="moverFoco(this,'c2')" onkeydown="borrarFoco(event,this,null)">
+            <input type="text" maxlength="1" id="c2" oninput="moverFoco(this,'c3')" onkeydown="borrarFoco(event,this,'c1')">
+            <input type="text" maxlength="1" id="c3" oninput="moverFoco(this,'c4')" onkeydown="borrarFoco(event,this,'c2')">
+            <input type="text" maxlength="1" id="c4" oninput="moverFoco(this,'c5')" onkeydown="borrarFoco(event,this,'c3')">
+            <input type="text" maxlength="1" id="c5" oninput="moverFoco(this,'c6')" onkeydown="borrarFoco(event,this,'c4')">
+            <input type="text" maxlength="1" id="c6" oninput="moverFoco(this,null)" onkeydown="borrarFoco(event,this,'c5')">
+        </div>
+        <button onclick="verificar()" style="width:100%">Verificar</button>
+        <p style="margin-top:1rem;color:#aaa;font-size:0.9rem">
+            ¿No recibiste el código? <a href="#" class="link" onclick="reenviar()">Reenviar</a>
+        </p>
+    </div>
+</div>
+<script>
+const emailRegistrado = localStorage.getItem("emailVerificar");
+if (!emailRegistrado) window.location.href = "login.html";
+document.getElementById("email-display").textContent = emailRegistrado;
+
+function moverFoco(input, siguienteId) {
+    if (input.value && siguienteId) document.getElementById(siguienteId).focus();
+    if (getCodigo().length === 6) verificar();
+}
+
+function borrarFoco(event, input, anteriorId) {
+    if (event.key === "Backspace" && !input.value && anteriorId) document.getElementById(anteriorId).focus();
+}
+
+function getCodigo() {
+    return ["c1","c2","c3","c4","c5","c6"].map(id => document.getElementById(id).value).join("");
+}
+
+async function verificar() {
+    const codigo = getCodigo();
+    if (codigo.length !== 6) return;
+    const msg = document.getElementById("mensaje");
+
+    const res = await fetch("/api/auth/verificar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailRegistrado, codigo })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+        msg.className = "mensaje exito";
+        msg.textContent = "¡Cuenta verificada! Redirigiendo...";
+        localStorage.removeItem("emailVerificar");
+        setTimeout(() => window.location.href = "login.html", 1500);
+    } else {
+        msg.className = "mensaje error";
+        msg.textContent = data.error;
+        ["c1","c2","c3","c4","c5","c6"].forEach(id => document.getElementById(id).value = "");
+        document.getElementById("c1").focus();
+    }
+}
+
+async function reenviar() {
+    const msg = document.getElementById("mensaje");
+    const res = await fetch("/api/auth/reenviar-codigo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailRegistrado })
+    });
+    const data = await res.json();
+    msg.className = res.ok ? "mensaje exito" : "mensaje error";
+    msg.textContent = data.message || data.error;
+}
+</script>
+</body>
+</html>

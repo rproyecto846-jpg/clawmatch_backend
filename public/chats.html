@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Chats</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        .chat-layout { display: flex; height: calc(100vh - 70px); gap: 0; }
+        .sidebar {
+            width: 300px;
+            min-width: 300px;
+            background: #1a1a2e;
+            border-right: 1px solid #2a2a4a;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-tabs { display: flex; border-bottom: 1px solid #2a2a4a; }
+        .sidebar-tab {
+            flex: 1;
+            padding: 0.75rem;
+            background: transparent;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border-bottom: 2px solid transparent;
+        }
+        .sidebar-tab.active { color: #e94560; border-bottom-color: #e94560; }
+        .sidebar-content { flex: 1; overflow-y: auto; }
+        .chat-item {
+            padding: 1rem;
+            border-bottom: 1px solid #2a2a4a;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .chat-item:hover, .chat-item.activo { background: #0f0f1a; }
+        .chat-item h4 { font-size: 0.95rem; margin-bottom: 0.25rem; }
+        .chat-item p { color: #666; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; }
+        .chat-header {
+            padding: 1rem 1.5rem;
+            background: #1a1a2e;
+            border-bottom: 1px solid #2a2a4a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h3 { color: #e0e0e0; }
+        .chat-header p { color: #aaa; font-size: 0.85rem; }
+        .mensajes-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+     	.mensaje {
+   	     max-width: 70%;
+   	     padding: 0.6rem 1rem;
+   	     border-radius: 12px;
+             font-size: 0.9rem;
+             line-height: 1.4;
+             color: #e0e0e0;
+             word-break: break-word;
+        }
+	.mensaje {
+    max-width: 100%;
+    padding: 0.6rem 1rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #e0e0e0;
+    word-break: break-word;
+    display: inline-block;
+}
+.mensaje.mio {
+    background: #e94560 !important;
+    color: white !important;
+    border-bottom-right-radius: 4px;
+}
+.mensaje.otro {
+    background: #2a2a4a !important;
+    color: #e0e0e0 !important;
+    border-bottom-left-radius: 4px;
+}
+        .mensaje-autor { font-size: 0.75rem; color: #aaa; margin-bottom: 0.2rem; }
+        .mensaje-hora { font-size: 0.7rem; opacity: 0.7; margin-top: 0.2rem; text-align: right; }
+        .input-area {
+            padding: 1rem 1.5rem;
+            background: #1a1a2e;
+            border-top: 1px solid #2a2a4a;
+            display: flex;
+            gap: 0.75rem;
+        }
+        .input-area textarea {
+            flex: 1;
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            border-radius: 20px;
+            color: #e0e0e0;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            resize: none;
+            max-height: 120px;
+            min-height: 40px;
+        }
+        .input-area button { border-radius: 50%; width: 40px; height: 40px; padding: 0; font-size: 1.1rem; }
+        .nuevo-chat-btn {
+            padding: 0.75rem;
+            background: #e94560;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            width: 100%;
+        }
+        .nuevo-chat-btn:hover { background: #c73652; }
+        .vacio { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; color: #aaa; gap: 1rem; }
+        .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:100; justify-content:center; align-items:center; }
+        .modal-overlay.visible { display: flex; }
+        .modal { background: #1a1a2e; border-radius: 10px; padding: 2rem; width: 90%; max-width: 450px; border: 1px solid #2a2a4a; }
+        .modal h3 { color: #e94560; margin-bottom: 1rem; }
+        .usuario-resultado { padding: 0.5rem; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .usuario-resultado:hover { background: #2a2a4a; }
+        .tag-usuario { background: #e94560; color: white; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.8rem; display: flex; align-items: center; gap: 0.3rem; }
+        .tags-container { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
+        .sala-item {
+            padding: 1rem;
+            border-bottom: 1px solid #2a2a4a;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .sala-item:hover, .sala-item.activo { background: #0f0f1a; }
+        .sala-item h4 { font-size: 0.95rem; }
+        .sala-item p { color: #666; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+
+<div class="chat-layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-tabs">
+            <button class="sidebar-tab active" onclick="cambiarSidebar('privados', event)">💬 Privados</button>
+            <button class="sidebar-tab" onclick="cambiarSidebar('salas', event)">🌐 Salas</button>
+        </div>
+        <div class="sidebar-content" id="sidebar-privados">
+            <button class="nuevo-chat-btn" onclick="abrirModalNuevoChat()">➕ Nuevo chat / grupo</button>
+            <div id="lista-chats">Cargando...</div>
+        </div>
+        <div class="sidebar-content" id="sidebar-salas" style="display:none">
+            <button class="nuevo-chat-btn" onclick="abrirModalNuevaSala()">➕ Crear sala pública</button>
+            <div id="lista-salas">Cargando...</div>
+        </div>
+    </div>
+
+    <!-- CHAT PRINCIPAL -->
+    <div class="chat-main">
+        <div id="chat-vacio" class="vacio">
+            <span style="font-size:3rem">💬</span>
+            <p>Selecciona un chat o sala para empezar</p>
+        </div>
+        <div id="chat-activo" style="display:none; flex:1; flex-direction:column; height:100%; overflow:hidden">
+            <div class="chat-header">
+                <div>
+                    <h3 id="chat-titulo">-</h3>
+                    <p id="chat-subtitulo">-</p>
+                </div>
+            </div>
+            <div class="mensajes-area" id="mensajes-area"></div>
+        <div id="escribiendo-indicator" style="padding:0.25rem 1.5rem;color:#aaa;font-size:0.8rem;font-style:italic;min-height:1.2rem"></div>   
+	 <div class="input-area">
+                <textarea id="input-mensaje" placeholder="Escribe un mensaje..." rows="1"
+    			onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMensaje()}"
+    			oninput="notificarEscribiendo()"
+    			onblur="notificarDejoEscribir()"></textarea>
+                <button onclick="enviarMensaje()">➤</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NUEVO CHAT -->
+<div id="modal-chat" class="modal-overlay">
+    <div class="modal">
+        <h3>💬 Nuevo chat</h3>
+        <div id="tags-usuarios" class="tags-container"></div>
+        <input type="text" id="buscar-usuario" placeholder="Buscar usuario..." oninput="buscarUsuarios()" style="margin-bottom:0.5rem">
+        <div id="resultados-usuarios"></div>
+        <input type="text" id="nombre-grupo" placeholder="Nombre del grupo (opcional para grupos)" style="margin-top:0.75rem">
+        <div style="display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end">
+            <button class="btn-secondary" onclick="cerrarModal('modal-chat')">Cancelar</button>
+            <button onclick="crearChat()">Crear</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NUEVA SALA -->
+<div id="modal-sala" class="modal-overlay">
+    <div class="modal">
+        <h3>🌐 Nueva sala pública</h3>
+        <input type="text" id="sala-nombre" placeholder="Nombre de la sala *">
+        <input type="text" id="sala-descripcion" placeholder="Descripción (opcional)">
+        <div style="display:flex;gap:0.5rem;margin-top:1rem;justify-content:flex-end">
+            <button class="btn-secondary" onclick="cerrarModal('modal-sala')">Cancelar</button>
+            <button onclick="crearSala()">Crear</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+let usuarioActual = null;
+let socket = null;
+let chatActual = null;
+let tipoActual = null; // 'privado' o 'sala'
+let usuariosSeleccionados = [];
+let escribiendoTimeout = null;
+let menuUsuarioId = null;
+
+async function clickUsuario(id_usuario, nombre, event) {
+    event.stopPropagation();
+    if (id_usuario === usuarioActual.id_usuario) return;
+
+    menuUsuarioId = id_usuario;
+    const menu = document.getElementById("menu-usuario");
+    document.getElementById("menu-usuario-nombre").textContent = `@${nombre}`;
+
+    // Verificar si ya tiene MD con este usuario
+    const chats = await fetch("/api/chats", { headers: { "Authorization": `Bearer ${token}` } });
+    const chatsData = await chats.json();
+    const mdExistente = chatsData.find(c => 
+        !c.es_grupal && c.participantes.some(p => p.id_usuario === id_usuario)
+    );
+
+    let opciones = `<a href="javascript:void(0)" onclick="verPerfil(${id_usuario})" style="display:block;padding:0.75rem 1rem;color:#e0e0e0;text-decoration:none;border-bottom:1px solid #2a2a4a;font-size:0.9rem">👤 Ver perfil</a>`;
+
+    if (tipoActual === "sala") {
+        if (mdExistente) {
+            opciones += `<a href="javascript:void(0)" onclick="irAMD(${mdExistente.id_chat})" style="display:block;padding:0.75rem 1rem;color:#e0e0e0;text-decoration:none;font-size:0.9rem">💬 Ir al MD</a>`;
+        } else {
+            opciones += `<a href="javascript:void(0)" onclick="crearMD(${id_usuario}, '${nombre}')" style="display:block;padding:0.75rem 1rem;color:#e0e0e0;text-decoration:none;font-size:0.9rem">✉️ Crear MD</a>`;
+        }
+    }
+
+    document.getElementById("menu-usuario-opciones").innerHTML = opciones;
+
+    // Posicionar el menú
+    menu.style.display = "block";
+    menu.style.left = `${Math.min(event.clientX, window.innerWidth - 200)}px`;
+    menu.style.top = `${Math.min(event.clientY, window.innerHeight - 150)}px`;
+}
+
+function verPerfil(id_usuario) {
+    cerrarMenuUsuario();
+    window.location.href = `perfil-usuario.html?id=${id_usuario}`;
+}
+
+async function crearMD(id_usuario, nombre) {
+    cerrarMenuUsuario();
+    const res = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ participantes: [id_usuario], es_grupal: false })
+    });
+    const data = await res.json();
+    if (res.ok) {
+        await cargarChats();
+        abrirChat(data.id_chat, nombre, 2);
+    }
+}
+
+function irAMD(id_chat) {
+    cerrarMenuUsuario();
+    cargarChats().then(() => {
+        const chat = document.querySelector(`.chat-item[onclick*="${id_chat}"]`);
+        if (chat) chat.click();
+    });
+}
+
+function cerrarMenuUsuario() {
+    document.getElementById("menu-usuario").style.display = "none";
+}
+
+document.addEventListener("click", cerrarMenuUsuario);
+
+async function init() {
+    const res = await fetch("/api/auth/perfil", { headers: { "Authorization": `Bearer ${token}` } });
+    usuarioActual = await res.json();
+    if (usuarioActual.rol === "administrador") document.getElementById("link-admin").style.display = "inline";
+
+    // Conectar socket
+    socket = io({ auth: { token } });
+
+    socket.on("nuevo_mensaje_chat", (msg) => {
+    console.log("nuevo_mensaje_chat:", msg, "chatActual:", chatActual, "tipoActual:", tipoActual);
+    if (tipoActual === "privado" && String(chatActual) === String(msg.id_chat)) {
+        agregarMensaje(msg);
+    }
+    cargarChats();
+});
+
+socket.on("nuevo_mensaje_sala", (msg) => {
+    console.log("nuevo_mensaje_sala:", msg, "chatActual:", chatActual, "tipoActual:", tipoActual);
+    if (tipoActual === "sala" && String(chatActual) === String(msg.id_sala)) {
+        agregarMensaje(msg);
+    }
+});
+
+socket.on("usuario_escribiendo", (data) => {
+    if (String(chatActual) === String(data.id_chat)) {
+        document.getElementById("escribiendo-indicator").textContent = `@${data.nombre} está escribiendo...`;
+    }
+});
+
+socket.on("usuario_dejo_escribir", () => {
+    document.getElementById("escribiendo-indicator").textContent = "";
+});
+
+    cargarChats();
+    cargarSalas();
+}
+
+function notificarEscribiendo() {
+    if (!chatActual) return;
+    if (tipoActual === "privado") {
+        socket.emit("escribiendo", { id_chat: chatActual });
+    } else {
+        socket.emit("escribiendo_sala", { id_sala: chatActual });
+    }
+    clearTimeout(escribiendoTimeout);
+    escribiendoTimeout = setTimeout(notificarDejoEscribir, 2000);
+}
+
+function notificarDejoEscribir() {
+    if (!chatActual) return;
+    if (tipoActual === "privado") {
+        socket.emit("dejo_escribir", { id_chat: chatActual });
+    } else {
+        socket.emit("dejo_escribir_sala", { id_sala: chatActual });
+    }
+}
+
+function cambiarSidebar(tab, event) {
+    document.querySelectorAll(".sidebar-tab").forEach(t => t.classList.remove("active"));
+    event.target.classList.add("active");
+    document.getElementById("sidebar-privados").style.display = tab === "privados" ? "block" : "none";
+    document.getElementById("sidebar-salas").style.display = tab === "salas" ? "block" : "none";
+}
+
+async function cargarChats() {
+    const res = await fetch("/api/chats", { headers: { "Authorization": `Bearer ${token}` } });
+    const chats = await res.json();
+    const div = document.getElementById("lista-chats");
+
+    if (chats.length === 0) {
+        div.innerHTML = "<p style='color:#666;padding:1rem;font-size:0.85rem'>No tienes chats aún.</p>";
+        return;
+    }
+
+    div.innerHTML = chats.map(c => {
+        const nombre = c.es_grupal
+            ? (c.nombre || c.participantes.filter(p => p.id_usuario !== usuarioActual.id_usuario).map(p => p.nombre_usuario).join(", "))
+            : c.participantes.filter(p => p.id_usuario !== usuarioActual.id_usuario).map(p => p.nombre_usuario).join(", ");
+        return `
+            <div class="chat-item ${chatActual == c.id_chat && tipoActual === 'privado' ? 'activo' : ''}"
+                 onclick="abrirChat(${c.id_chat}, '${nombre}', ${c.total_participantes})">
+                <h4>${c.es_grupal ? '👥 ' : '👤 '}${nombre}</h4>
+                <p>${c.ultimo_mensaje || "Sin mensajes aún"}</p>
+            </div>
+        `;
+    }).join("");
+}
+
+async function cargarSalas() {
+    const res = await fetch("/api/chats/salas", { headers: { "Authorization": `Bearer ${token}` } });
+    const salas = await res.json();
+    const div = document.getElementById("lista-salas");
+
+    if (salas.length === 0) {
+        div.innerHTML = "<p style='color:#666;padding:1rem;font-size:0.85rem'>No hay salas públicas aún.</p>";
+        return;
+    }
+
+    div.innerHTML = salas.map(s => `
+        <div class="sala-item ${chatActual == s.id_sala && tipoActual === 'sala' ? 'activo' : ''}"
+             onclick="abrirSala(${s.id_sala}, '${s.nombre}', '${s.descripcion || "Sala pública"}')">
+            <h4>🌐 ${s.nombre}</h4>
+            <p>${s.descripcion || ""} · ${s.total_mensajes} mensajes</p>
+        </div>
+    `).join("");
+}
+
+async function abrirChat(id_chat, nombre, participantes) {
+    chatActual = id_chat;
+    tipoActual = "privado";
+    document.getElementById("chat-vacio").style.display = "none";
+    document.getElementById("chat-activo").style.display = "flex";
+    document.getElementById("chat-titulo").textContent = nombre;
+    document.getElementById("chat-subtitulo").textContent = `${participantes} participantes`;
+
+    socket.emit("unirse_sala", id_chat);
+
+    const res = await fetch(`/api/chats/${id_chat}/mensajes`, { headers: { "Authorization": `Bearer ${token}` } });
+    const mensajes = await res.json();
+    const area = document.getElementById("mensajes-area");
+    area.innerHTML = mensajes.map(m => renderMensaje(m)).join("");
+    area.scrollTop = area.scrollHeight;
+    cargarChats();
+}
+
+async function abrirSala(id_sala, nombre, descripcion) {
+    chatActual = id_sala;
+    tipoActual = "sala";
+    document.getElementById("chat-vacio").style.display = "none";
+    document.getElementById("chat-activo").style.display = "flex";
+    document.getElementById("chat-titulo").textContent = `🌐 ${nombre}`;
+    document.getElementById("chat-subtitulo").textContent = descripcion;
+
+    socket.emit("unirse_sala", id_sala);
+
+    const res = await fetch(`/api/chats/salas/${id_sala}/mensajes`, { headers: { "Authorization": `Bearer ${token}` } });
+    const mensajes = await res.json();
+    const area = document.getElementById("mensajes-area");
+    area.innerHTML = mensajes.map(m => renderMensaje(m)).join("");
+    area.scrollTop = area.scrollHeight;
+}
+
+function renderMensaje(m) {
+    const esMio = m.id_usuario === usuarioActual.id_usuario;
+    const hora = new Date(m.fecha_envio).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const nombre = m.nickname || m.nombre_usuario;
+    const avatar = m.foto_perfil
+        ? `<img src="${m.foto_perfil}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #e94560;cursor:pointer;flex-shrink:0" onclick="clickUsuario(${m.id_usuario}, '${nombre}', event)">`
+        : `<div style="width:32px;height:32px;border-radius:50%;background:#2a2a4a;border:2px solid #e94560;display:flex;align-items:center;justify-content:center;font-size:0.9rem;cursor:pointer;flex-shrink:0" onclick="clickUsuario(${m.id_usuario}, '${nombre}', event)">👤</div>`;
+
+    if (esMio) {
+        return `
+            <div style="display:flex;align-items:flex-end;gap:0.5rem;justify-content:flex-end">
+                <div>
+                    <div class="mensaje mio">
+                        ${m.contenido}
+                        <div class="mensaje-hora">${hora}</div>
+                    </div>
+                </div>
+                ${avatar}
+            </div>
+        `;
+    } else {
+        return `
+            <div style="display:flex;align-items:flex-end;gap:0.5rem">
+                ${avatar}
+                <div>
+                    <div class="mensaje-autor">@${nombre}</div>
+                    <div class="mensaje otro" onclick="clickUsuario(${m.id_usuario}, '${nombre}', event)">
+                        ${m.contenido}
+                        <div class="mensaje-hora">${hora}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function agregarMensaje(m) {
+    const area = document.getElementById("mensajes-area");
+    const html = renderMensaje(m);
+    console.log("HTML generado:", html);
+    area.innerHTML += html;
+    area.scrollTop = area.scrollHeight;
+}
+
+function enviarMensaje() {
+    const input = document.getElementById("input-mensaje");
+    const contenido = input.value.trim();
+    if (!contenido || !chatActual) return;
+
+    if (tipoActual === "privado") {
+        socket.emit("mensaje_chat", { id_chat: chatActual, contenido });
+    } else {
+        socket.emit("mensaje_sala_publica", { id_sala: chatActual, contenido });
+    }
+
+    input.value = "";
+}
+
+// NUEVO CHAT
+function abrirModalNuevoChat() {
+    usuariosSeleccionados = [];
+    document.getElementById("tags-usuarios").innerHTML = "";
+    document.getElementById("buscar-usuario").value = "";
+    document.getElementById("resultados-usuarios").innerHTML = "";
+    document.getElementById("nombre-grupo").value = "";
+    document.getElementById("modal-chat").classList.add("visible");
+}
+
+async function buscarUsuarios() {
+    const q = document.getElementById("buscar-usuario").value;
+    if (q.length < 2) { document.getElementById("resultados-usuarios").innerHTML = ""; return; }
+
+    const res = await fetch(`/api/chats/buscar-usuarios?q=${q}`, { headers: { "Authorization": `Bearer ${token}` } });
+    const usuarios = await res.json();
+    document.getElementById("resultados-usuarios").innerHTML = usuarios.map(u => `
+        <div class="usuario-resultado" onclick="seleccionarUsuario(${u.id_usuario}, '${u.nombre_usuario}')">
+            <span>@${u.nombre_usuario}</span>
+            <button style="background:#e94560;border:none;color:white;padding:0.2rem 0.6rem;border-radius:4px;cursor:pointer">+</button>
+        </div>
+    `).join("");
+}
+
+function seleccionarUsuario(id, nombre) {
+    if (usuariosSeleccionados.find(u => u.id === id)) return;
+    usuariosSeleccionados.push({ id, nombre });
+    document.getElementById("tags-usuarios").innerHTML = usuariosSeleccionados.map(u => `
+        <span class="tag-usuario">@${u.nombre} <span onclick="quitarUsuario(${u.id})" style="cursor:pointer">✕</span></span>
+    `).join("");
+    document.getElementById("buscar-usuario").value = "";
+    document.getElementById("resultados-usuarios").innerHTML = "";
+}
+
+function quitarUsuario(id) {
+    usuariosSeleccionados = usuariosSeleccionados.filter(u => u.id !== id);
+    document.getElementById("tags-usuarios").innerHTML = usuariosSeleccionados.map(u => `
+        <span class="tag-usuario">@${u.nombre} <span onclick="quitarUsuario(${u.id})" style="cursor:pointer">✕</span></span>
+    `).join("");
+}
+
+async function crearChat() {
+    if (usuariosSeleccionados.length === 0) return;
+    const es_grupal = usuariosSeleccionados.length > 1;
+    const nombre = document.getElementById("nombre-grupo").value;
+
+    const res = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({
+            nombre: nombre || null,
+            participantes: usuariosSeleccionados.map(u => u.id),
+            es_grupal
+        })
+    });
+    const data = await res.json();
+    cerrarModal("modal-chat");
+    if (res.ok) {
+        await cargarChats();
+        const nombre_chat = usuariosSeleccionados.map(u => u.nombre).join(", ");
+        abrirChat(data.id_chat, nombre_chat, usuariosSeleccionados.length + 1);
+    }
+}
+
+// NUEVA SALA
+function abrirModalNuevaSala() {
+    document.getElementById("sala-nombre").value = "";
+    document.getElementById("sala-descripcion").value = "";
+    document.getElementById("modal-sala").classList.add("visible");
+}
+
+async function crearSala() {
+    const nombre = document.getElementById("sala-nombre").value;
+    if (!nombre) return;
+
+    const res = await fetch("/api/chats/salas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({
+            nombre,
+            descripcion: document.getElementById("sala-descripcion").value
+        })
+    });
+    const data = await res.json();
+    cerrarModal("modal-sala");
+    if (res.ok) {
+        await cargarSalas();
+        abrirSala(data.id_sala, nombre, document.getElementById("sala-descripcion").value || "Sala pública");
+    }
+}
+
+function cerrarModal(id) { document.getElementById(id).classList.remove("visible"); }
+
+function logout() { localStorage.removeItem("token"); window.location.href = "login.html"; }
+
+init();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+<!-- MENU USUARIO -->
+<div id="menu-usuario" style="display:none;position:fixed;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:8px;z-index:999;min-width:180px;box-shadow:0 4px 20px rgba(0,0,0,0.5);overflow:hidden">
+    <div id="menu-usuario-nombre" style="padding:0.75rem 1rem;color:#e94560;font-weight:bold;border-bottom:1px solid #2a2a4a;font-size:0.9rem"></div>
+    <div id="menu-usuario-opciones"></div>
+</div>
+</body>
+</html>

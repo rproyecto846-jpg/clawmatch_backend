@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Tienda</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .tienda-header {
+            text-align: center;
+            padding: 2rem 0 1rem;
+        }
+        .tienda-header h2 { font-size: 2rem; }
+        .tienda-header p { color: #aaa; margin-top: 0.5rem; }
+        .categorias {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+        .cat-btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            background: #2a2a4a;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .cat-btn.active, .cat-btn:hover { background: #e94560; color: white; }
+        .productos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .producto-card {
+            background: #1a1a2e;
+            border-radius: 10px;
+            border: 1px solid #2a2a4a;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .producto-card:hover { transform: translateY(-4px); border-color: #e94560; }
+        .producto-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #2a2a4a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+        }
+        .producto-img img { width: 100%; height: 200px; object-fit: cover; }
+        .producto-info { padding: 1rem; }
+        .producto-nombre { font-weight: bold; font-size: 1rem; margin-bottom: 0.25rem; }
+        .producto-desc { color: #aaa; font-size: 0.85rem; margin-bottom: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .producto-footer { display: flex; justify-content: space-between; align-items: center; }
+        .producto-precio { font-size: 1.3rem; font-weight: bold; color: #e94560; }
+        .producto-stock { color: #aaa; font-size: 0.8rem; }
+        .btn-añadir { padding: 0.5rem 1rem; font-size: 0.85rem; }
+        .carrito-flotante {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 50;
+        }
+	.carrito-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #e94560;
+            border: none;
+            color: white;
+            font-size: 1.4rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(233,69,96,0.4);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }        
+
+        .carrito-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ffd700;
+            color: #0f0f1a;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .carrito-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 380px;
+            height: 100vh;
+            background: #1a1a2e;
+            border-left: 1px solid #2a2a4a;
+            z-index: 100;
+            transition: right 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .carrito-panel.abierto { right: 0; }
+        .carrito-panel-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid #2a2a4a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .carrito-items { flex: 1; overflow-y: auto; padding: 1rem; }
+        .carrito-item {
+            display: flex;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #2a2a4a;
+            align-items: center;
+        }
+        .carrito-item-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            background: #2a2a4a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .carrito-item-img img { width: 60px; height: 60px; object-fit: cover; }
+        .carrito-item-info { flex: 1; }
+        .carrito-item-nombre { font-size: 0.9rem; font-weight: bold; }
+        .carrito-item-precio { color: #e94560; font-size: 0.9rem; }
+        .cantidad-control { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; }
+                .btn-cantidad {
+            background: #2a2a4a;
+            border: none;
+            color: white;
+            width: 38px;
+            height: 38px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .carrito-footer {
+            padding: 1.25rem;
+            border-top: 1px solid #2a2a4a;
+        }
+        .carrito-total { display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 1.1rem; }
+        .carrito-total span:last-child { font-weight: bold; color: #e94560; }
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99; display:none; }
+        .overlay.visible { display: block; }
+        .vacio { text-align: center; padding: 3rem; color: #aaa; }
+        .toast {
+            position: fixed;
+            bottom: 5rem;
+            right: 1.5rem;
+            background: #1a4a2a;
+            color: #4caf50;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            z-index: 200;
+            display: none;
+            font-size: 0.9rem;
+        }
+        .toast.visible { display: block; animation: fadeInOut 2s ease; }
+        @keyframes fadeInOut { 0%,100% { opacity:0; } 20%,80% { opacity:1; } }
+        @media (max-width: 768px) {
+            .carrito-panel { width: 100%; right: -100%; }
+            .productos-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+            .producto-img { height: 140px; }
+            .producto-img img { height: 140px; }
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="torneos.html">Torneos</a>
+        <a href="comunidades.html">Comunidades</a>
+        <a href="tienda.html">🛍️ Tienda</a>
+        <a href="chats.html">💬 Chats</a>
+        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="tienda-header">
+        <h2>🛍️ Tienda ClawMatch</h2>
+        <p>Productos oficiales de ClawMatch</p>
+    </div>
+
+    <div id="mensaje" class="mensaje"></div>
+
+    <div class="categorias">
+        <button class="cat-btn active" onclick="filtrar('', this)">Todo</button>
+        <button class="cat-btn" onclick="filtrar('ropa', this)">👕 Ropa</button>
+        <button class="cat-btn" onclick="filtrar('gaming', this)">🎮 Gaming</button>
+        <button class="cat-btn" onclick="filtrar('accesorios', this)">🎒 Accesorios</button>
+    </div>
+
+    <div class="productos-grid" id="productos-grid">Cargando...</div>
+</div>
+
+<!-- CARRITO FLOTANTE -->
+<div class="carrito-flotante">
+    <button class="carrito-btn" onclick="toggleCarrito()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+    </svg>
+    <span class="carrito-badge" id="carrito-badge" style="display:none">0</span>
+</button>
+</div>
+
+<!-- PANEL CARRITO -->
+<div class="overlay" id="overlay" onclick="toggleCarrito()"></div>
+<div class="carrito-panel" id="carrito-panel">
+    <div class="carrito-panel-header">
+        <h3>🛒 Mi carrito</h3>
+        <button onclick="toggleCarrito()" style="background:transparent;border:none;color:#aaa;font-size:1.2rem;cursor:pointer">✕</button>
+    </div>
+    <div class="carrito-items" id="carrito-items">Cargando...</div>
+    <div class="carrito-footer" id="carrito-footer" style="display:none">
+        <div class="carrito-total">
+            <span>Total:</span>
+            <span id="carrito-total">0.00€</span>
+        </div>
+        <button onclick="window.location.href='checkout.html'" style="width:100%">
+            Finalizar compra →
+        </button>
+    </div>
+</div>
+
+<div class="toast" id="toast">✅ Añadido al carrito</div>
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) window.location.href = "login.html";
+
+let carritoAbierto = false;
+
+async function init() {
+    await cargarProductos();
+    await cargarCarrito();
+}
+
+async function cargarProductos(categoria = "") {
+    const url = categoria ? `/api/tienda/productos?categoria=${categoria}` : "/api/tienda/productos";
+    const res = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
+    const productos = await res.json();
+    const grid = document.getElementById("productos-grid");
+
+    if (productos.length === 0) {
+        grid.innerHTML = "<p style='color:#aaa;text-align:center;padding:3rem'>No hay productos en esta categoría.</p>";
+        return;
+    }
+
+    grid.innerHTML = productos.map(p => `
+        <div class="producto-card">
+            <div class="producto-img">
+                ${p.imagen_url ? `<img src="${p.imagen_url}" alt="${p.nombre}" onerror="this.parentElement.innerHTML='🎮'">` : getEmoji(p.categoria)}
+            </div>
+            <div class="producto-info">
+                <div class="producto-nombre">${p.nombre}</div>
+                <div class="producto-desc">${p.descripcion || ""}</div>
+                <div class="producto-footer">
+                    <div>
+                        <div class="producto-precio">${p.precio}€</div>
+                        <div class="producto-stock">${p.stock > 0 ? `${p.stock} disponibles` : "Sin stock"}</div>
+                    </div>
+                    ${p.stock > 0
+                        ? `<div style="display:flex;flex-direction:column;gap:0.5rem">
+                            <button class="btn-añadir" onclick="window.location.href='producto.html?id=${p.id_producto}'">Ver producto</button>
+                            <button class="btn-añadir" onclick="event.stopPropagation();añadirCarrito(${p.id_producto})">Añadir</button>
+                           </div>`
+                        : `<button class="btn-añadir" disabled style="background:#2a2a4a;color:#666">Sin stock</button>`
+                    }
+                </div>
+            </div>
+        </div>
+    `).join("");
+}
+
+function getEmoji(categoria) {
+    const emojis = { ropa: "👕", gaming: "🎮", accesorios: "🎒" };
+    return emojis[categoria] || "📦";
+}
+
+function filtrar(categoria, btn) {
+    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    cargarProductos(categoria);
+}
+
+async function añadirCarrito(id_producto) {
+    const res = await fetch("/api/tienda/carrito", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ id_producto, cantidad: 1 })
+    });
+    if (res.ok) {
+        mostrarToast();
+        await cargarCarrito();
+    }
+}
+
+async function cargarCarrito() {
+    const res = await fetch("/api/tienda/carrito", { headers: { "Authorization": `Bearer ${token}` } });
+    const data = await res.json();
+    const items = data.items || [];
+    const total = data.total || "0.00";
+
+    const badge = document.getElementById("carrito-badge");
+    const totalItems = items.reduce((sum, i) => sum + i.cantidad, 0);
+    badge.textContent = totalItems;
+    badge.style.display = totalItems > 0 ? "flex" : "none";
+
+    const div = document.getElementById("carrito-items");
+    const footer = document.getElementById("carrito-footer");
+
+    if (items.length === 0) {
+        div.innerHTML = "<div class='vacio'>😴 Tu carrito está vacío</div>";
+        footer.style.display = "none";
+        return;
+    }
+
+    footer.style.display = "block";
+    document.getElementById("carrito-total").textContent = `${total}€`;
+
+    div.innerHTML = items.map(item => `
+        <div class="carrito-item">
+            <div class="carrito-item-img">
+                ${item.imagen_url ? `<img src="${item.imagen_url}" onerror="this.parentElement.innerHTML='📦'">` : "📦"}
+            </div>
+            <div class="carrito-item-info">
+                <div class="carrito-item-nombre">${item.nombre}</div>
+                <div class="carrito-item-precio">${item.precio}€</div>
+                <div class="cantidad-control">
+                    <button class="btn-cantidad" onclick="cambiarCantidad(${item.id_carrito}, ${item.cantidad - 1})">−</button>
+                    <span>${item.cantidad}</span>
+                    <button class="btn-cantidad" onclick="cambiarCantidad(${item.id_carrito}, ${item.cantidad + 1})">+</button>
+                    <button class="btn-cantidad" onclick="eliminarItem(${item.id_carrito})" style="background:#4a1a1a;color:#f44336;margin-left:0.5rem;font-size:0.75rem">✕</button>
+                </div>
+            </div>
+            <div style="font-weight:bold;color:#e94560">${(item.precio * item.cantidad).toFixed(2)}€</div>
+        </div>
+    `).join("");
+}
+
+async function cambiarCantidad(id_carrito, cantidad) {
+    await fetch(`/api/tienda/carrito/${id_carrito}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ cantidad })
+    });
+    await cargarCarrito();
+}
+
+async function eliminarItem(id_carrito) {
+    await fetch(`/api/tienda/carrito/${id_carrito}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+    await cargarCarrito();
+}
+
+function toggleCarrito() {
+    carritoAbierto = !carritoAbierto;
+    document.getElementById("carrito-panel").classList.toggle("abierto", carritoAbierto);
+    document.getElementById("overlay").classList.toggle("visible", carritoAbierto);
+    if (carritoAbierto) cargarCarrito();
+}
+
+function mostrarToast() {
+    const toast = document.getElementById("toast");
+    toast.classList.add("visible");
+    setTimeout(() => toast.classList.remove("visible"), 2000);
+}
+
+init();
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawMatch - Pedido confirmado</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .exito-card { max-width: 500px; margin: 3rem auto; text-align: center; }
+        .icono { font-size: 4rem; animation: bounce 1s ease-in-out; }
+        @keyframes bounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+    </style>
+</head>
+<body>
+<nav>
+    <h1>🎮 ClawMatch</h1>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <a href="tienda.html">🛍️ Tienda</a>
+        <div id="nav-avatar-container"></div>
+    </div>
+</nav>
+<div class="container">
+    <div class="card exito-card">
+        <div class="icono">📦</div>
+        <h2 style="color:#4caf50;margin:1rem 0">¡Pedido confirmado!</h2>
+        <p style="color:#aaa;margin-bottom:0.5rem">Tu pedido <b id="pedido-id" style="color:#e94560"></b> ha sido realizado correctamente.</p>
+        <p style="color:#aaa;font-size:0.9rem;margin-bottom:2rem">Recibirás un email con los detalles del envío.</p>
+        <button onclick="window.location.href='mis-pedidos.html'" style="width:100%">📋 Ver mis pedidos</button>
+        <br><br>
+        <a href="tienda.html" style="color:#aaa;font-size:0.9rem">← Seguir comprando</a>
+    </div>
+</div>
+<script>
+const id = localStorage.getItem("ultimo-pedido");
+if (id) document.getElementById("pedido-id").textContent = `#${id}`;
+</script>
+<script src="nav.js"></script>
+<script>initNav();</script>
+</body>
+</html>
