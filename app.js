@@ -24,7 +24,7 @@ const tiendaRoutes = require("./routes/tiendaRoutes");
 
 app.use(express.static(__dirname + "/public"));
 app.get("/", (req, res) => {
-    res.redirect("/login.html");
+    res.json({ message: "Backend ClawMatch funcionando ✅" });
 });
 app.use(cors());
 app.use(express.json());
