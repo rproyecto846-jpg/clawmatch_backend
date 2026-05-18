@@ -51,6 +51,33 @@ app.get("/", async (req, res) => {
     }
 });
 
+// Ruta de diagnóstico
+app.get("/api/test-db", async (req, res) => {
+    try {
+        console.log("=== TEST DB ===");
+        console.log("DB_HOST:", process.env.DB_HOST);
+        console.log("DB_USER:", process.env.DB_USER);
+        console.log("DB_NAME:", process.env.DB_NAME);
+        console.log("DB_PORT:", process.env.DB_PORT);
+        
+        const db = require("./config/db");
+        const [rows] = await db.query("SELECT 1 AS test");
+        
+        res.json({ 
+            success: true, 
+            message: "Conexión exitosa",
+            result: rows[0]
+        });
+    } catch (error) {
+        console.error("ERROR CONEXIÓN DB:", error.message);
+        res.status(500).json({ 
+            success: false,
+            error: error.message,
+            code: error.code
+        });
+    }
+});
+
 app.get("/api/juegos", async (req, res) => {
     try {
         const db = require("./config/db");
