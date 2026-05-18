@@ -40,6 +40,10 @@ app.use("/api/chats", chatRoutes);
 app.use("/api/pagos", pagoRoutes);
 app.use("/api/tienda", tiendaRoutes);
 
+app.get("/", (req, res) => {
+    res.redirect("/login.html");
+});
+
 // Ruta de diagnóstico
 app.get("/api/test-db", async (req, res) => {
     try {
