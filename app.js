@@ -54,10 +54,16 @@ app.get("/", async (req, res) => {
 app.get("/api/juegos", async (req, res) => {
     try {
         const db = require("./config/db");
+        console.log("Intentando conectar a la base de datos...");
         const [rows] = await db.query("SELECT * FROM juegos");
+        console.log("Consulta exitosa, filas:", rows.length);
         res.json(rows);
     } catch (error) {
-        res.status(500).json({ error: "Error obteniendo juegos" });
+        console.error("ERROR EN /api/juegos:", error); // Añade esto
+        res.status(500).json({ 
+            error: "Error obteniendo juegos",
+            details: error.message // Añade esto para ver el error real
+        });
     }
 });
 
