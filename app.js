@@ -23,9 +23,11 @@ const pagoRoutes = require("./routes/pagoRoutes");
 const tiendaRoutes = require("./routes/tiendaRoutes");
 
 app.use(express.static(__dirname + "/public"));
-app.get("/", (req, res) => {
-    res.json({ message: "Backend ClawMatch funcionando ✅" });
+app.get("/", (req, res) => {          // ← Esta línea
+    res.redirect("/login.html");       // ← Cambia solo esto
 });
+app.use(cors());
+
 app.use(cors());
 app.use(express.json());
 app.use("/api/suscripciones", suscripcionRoutes);
