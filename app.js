@@ -22,7 +22,7 @@ const suscripcionRoutes = require("./routes/suscripcionRoutes");
 const pagoRoutes = require("./routes/pagoRoutes");
 const tiendaRoutes = require("./routes/tiendaRoutes");
 
-app.use(express.static(__dirname + "/public"));
+app.use(express.static(__dirname + "/public", { extensions: ["html"] }));
 app.get("/", (req, res) => {          // ← Esta línea
     res.redirect("/login.html");       // ← Cambia solo esto
 });
