@@ -39,17 +39,6 @@ app.use("/api/comunidades", comunidadRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/pagos", pagoRoutes);
 app.use("/api/tienda", tiendaRoutes);
-app.get("/", async (req, res) => {
-    try {
-        const [rows] = await db.query("SELECT 1 + 1 AS result");
-        res.json({ 
-            message: "ClawMatch API funcionando",
-            dbTest: rows[0].result
-        });
-    } catch (error) {
-        res.status(500).json({ error: "Error conectando a la base de datos" });
-    }
-});
 
 // Ruta de diagnóstico
 app.get("/api/test-db", async (req, res) => {
