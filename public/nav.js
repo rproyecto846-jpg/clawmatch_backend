@@ -21,10 +21,10 @@ async function initNav() {
         <div class="nav-avatar-btn">
             ${avatarHtml}
             <div class="nav-dropdown" id="nav-dropdown">
-		<a href="suscripciones.html">⭐ Suscripción</a>
-                <a href="perfil.html">👤 Ver perfil</a>
-                <a href="tienda.html">🛍️ Tienda</a>
-		<a href="mis-pedidos.html">📋 Mis pedidos</a>
+		<a href="suscripciones">⭐ Suscripción</a>
+                <a href="perfil">👤 Ver perfil</a>
+                <a href="tienda">🛍️ Tienda</a>
+		<a href="mis-pedidos">📋 Mis pedidos</a>
 		<a href="#" onclick="logoutNav()">🚪 Cerrar sesión</a>
             </div>
         </div>
