@@ -25,8 +25,8 @@
 <nav>
     <h1>🎮 ClawMatch</h1>
     <div style="display:flex;align-items:center;gap:1rem">
-        <a href="tienda.html">🛍️ Tienda</a>
-        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <a href="tienda">🛍️ Tienda</a>
+        <a id="link-admin" href="admin" style="display:none">⚙️ Admin</a>
         <div id="nav-avatar-container"></div>
     </div>
 </nav>
@@ -36,7 +36,7 @@
 </div>
 <script>
 const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "login";
 
 async function init() {
     const res = await fetch("/api/tienda/pedidos", { headers: { "Authorization": `Bearer ${token}` } });
@@ -44,7 +44,7 @@ async function init() {
     const div = document.getElementById("pedidos");
 
     if (pedidos.length === 0) {
-        div.innerHTML = "<div class='card' style='text-align:center;padding:3rem;color:#aaa'>😴 No tienes pedidos aún. <a href='tienda.html' style='color:#e94560'>Ir a la tienda →</a></div>";
+        div.innerHTML = "<div class='card' style='text-align:center;padding:3rem;color:#aaa'>😴 No tienes pedidos aún. <a href='tienda' style='color:#e94560'>Ir a la tienda →</a></div>";
         return;
     }
 
