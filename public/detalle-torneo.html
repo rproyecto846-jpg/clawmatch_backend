@@ -53,12 +53,12 @@
         <a href="torneos">Torneos</a>
         <a href="comunidades">Comunidades</a>
         <a href="chats">💬 Chats</a>
-        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <a id="link-admin" href="admin" style="display:none">⚙️ Admin</a>
         <div id="nav-avatar-container"></div>
     </div>
 </nav>
 <div class="container">
-    <span class="volver" onclick="window.location.href='torneos.html'">← Volver a torneos</span>
+    <span class="volver" onclick="window.location.href='torneos'">← Volver a torneos</span>
     <div id="torneo-banner" class="torneo-banner">Cargando...</div>
     <div id="mensaje" class="mensaje"></div>
     <div class="tabs">
@@ -91,11 +91,11 @@
 
 <script>
 const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "login";
 
 const params = new URLSearchParams(window.location.search);
 const id_torneo = params.get("id");
-if (!id_torneo) window.location.href = "torneos.html";
+if (!id_torneo) window.location.href = "torneos";
 
 let usuarioActual = null;
 let torneoData = null;
@@ -243,7 +243,7 @@ function cambiarTab(tab, event) {
 
 function logout() {
     localStorage.removeItem("token");
-    window.location.href = "login.html";
+    window.location.href = "login";
 }
 
 init();
