@@ -27,7 +27,7 @@
         <input type="email" id="email" placeholder="Email" onkeydown="if(event.key==='Enter')login()">
         <input type="password" id="password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')login()">
         <button onclick="login()" style="width:100%">Entrar</button>
-        <p style="margin-top:1rem;color:#aaa;text-align:center">¿No tienes cuenta? <a href="register.html" class="link">Regístrate</a></p>
+        <p style="margin-top:1rem;color:#aaa;text-align:center">¿No tienes cuenta? <a href="register" class="link">Regístrate</a></p>
     </div>
 
     <!-- PASO 2: 2FA -->
@@ -74,12 +74,12 @@ async function login() {
             document.getElementById("c1").focus();
         } else {
             localStorage.setItem("token", data.token);
-            window.location.href = "torneos.html";
+            window.location.href = "torneos";
         }
     } else if (data.noVerificado) {
         localStorage.setItem("emailVerificar", data.email);
         msg.className = "mensaje error";
-        msg.innerHTML = `Cuenta no verificada. <a href="verificar.html" class="link">Verificar ahora</a>`;
+        msg.innerHTML = `Cuenta no verificada. <a href="verificar" class="link">Verificar ahora</a>`;
     } else {
         msg.className = "mensaje error";
         msg.textContent = data.error;
@@ -113,7 +113,7 @@ async function verificar2FA() {
 
     if (res.ok) {
         localStorage.setItem("token", data.token);
-        window.location.href = "torneos.html";
+        window.location.href = "torneos";
     } else {
         msg.className = "mensaje error";
         msg.textContent = data.error;
