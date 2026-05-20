@@ -27,8 +27,8 @@
 <nav>
     <h1>🎮 ClawMatch</h1>
     <div>
-        <a href="login.html">Login</a>
-        <a href="register.html">Registro</a>
+        <a href="login">Login</a>
+        <a href="register">Registro</a>
     </div>
 </nav>
 <div class="container">
@@ -42,7 +42,7 @@
         <input type="password" id="password" placeholder="Contraseña *">
         <input type="tel" id="telefono" placeholder="Teléfono (opcional)" onkeydown="if(event.key==='Enter')register()">
         <button onclick="register()" style="width:100%">Registrarse</button>
-        <p style="margin-top:1rem;color:#aaa;text-align:center">¿Ya tienes cuenta? <a href="login.html" class="link">Inicia sesión</a></p>
+        <p style="margin-top:1rem;color:#aaa;text-align:center">¿Ya tienes cuenta? <a href="login" class="link">Inicia sesión</a></p>
     </div>
 
     <!-- PASO 2: VERIFICACIÓN -->
@@ -135,7 +135,7 @@ async function verificar() {
     if (res.ok) {
         msg.className = "mensaje exito";
         msg.textContent = "¡Cuenta verificada! Redirigiendo...";
-        setTimeout(() => window.location.href = "login.html", 1500);
+        setTimeout(() => window.location.href = "login", 1500);
     } else {
         msg.className = "mensaje error";
         msg.textContent = data.error;
