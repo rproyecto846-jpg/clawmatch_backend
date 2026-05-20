@@ -115,14 +115,14 @@
 
 <script>
 const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "login";
 
 async function init() {
     const res = await fetch("/api/tienda/carrito", { headers: { "Authorization": `Bearer ${token}` } });
     const data = await res.json();
     const items = data.items || [];
 
-    if (items.length === 0) { window.location.href = "tienda.html"; return; }
+    if (items.length === 0) { window.location.href = "tienda"; return; }
 
     document.getElementById("subtotal").textContent = `${data.total}€`;
     document.getElementById("total-final").textContent = `${data.total}€`;
@@ -188,7 +188,7 @@ async function realizarPedido() {
 
     if (res.ok) {
         localStorage.setItem("ultimo-pedido", data.id_pedido);
-        window.location.href = "pedido-exitoso.html";
+        window.location.href = "pedido-exitoso";
     } else {
         msg.className = "mensaje error";
         msg.textContent = data.error;
@@ -203,3 +203,4 @@ init();
 <script>initNav();</script>
 </body>
 </html>
+
