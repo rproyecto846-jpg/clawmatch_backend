@@ -44,5 +44,5 @@ function toggleNavDropdown() {
 
 function logoutNav() {
     localStorage.removeItem("token");
-    window.location.href = "login.html";
+    window.location.href = "login";
 }
