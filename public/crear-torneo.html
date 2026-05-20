@@ -23,7 +23,7 @@
         <a href="torneos">Torneos</a>
         <a href="comunidades">Comunidades</a>
         <a href="chats">💬 Chats</a>
-        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <a id="link-admin" href="admin" style="display:none">⚙️ Admin</a>
         <div id="nav-avatar-container"></div>
     </div>
 </nav>
@@ -86,7 +86,7 @@
         </div>
         <br>
         <button onclick="crearTorneo()">Crear torneo</button>
-        <button class="btn-secondary" onclick="window.location.href='torneos.html'">Cancelar</button>
+        <button class="btn-secondary" onclick="window.location.href='torneos'">Cancelar</button>
     </div>
 </div>
 <script>
@@ -96,7 +96,7 @@ function toggleJuegoCustom() {
 }
 
 const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "login";
 
 async function cargarJuegos() {
     const res = await fetch("/api/juegos", {
@@ -171,7 +171,7 @@ async function crearTorneo() {
     if (res.ok) {
         msg.className = "mensaje exito";
         msg.textContent = "Torneo creado correctamente, redirigiendo...";
-        setTimeout(() => window.location.href = "torneos.html", 1500);
+        setTimeout(() => window.location.href = "torneos", 1500);
     } else {
         msg.className = "mensaje error";
         msg.textContent = data.error;
@@ -180,7 +180,7 @@ async function crearTorneo() {
 
 function logout() {
     localStorage.removeItem("token");
-    window.location.href = "login.html";
+    window.location.href = "login";
 }
 
 cargarJuegos();
