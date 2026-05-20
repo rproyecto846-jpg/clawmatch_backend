@@ -14,7 +14,7 @@
         <a href="comunidades">Comunidades</a>
         <a href="chats">💬 Chats</a>
         <a href="crear-torneo">+ Crear torneo</a>
-        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <a id="link-admin" href="admin" style="display:none">⚙️ Admin</a>
         <div id="nav-avatar-container"></div>
     </div>
 </nav>
@@ -27,7 +27,7 @@
 </div>
 <script>
 const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "login";
 
 let usuarioActual = null;
 
@@ -96,7 +96,7 @@ function editarTorneo(id, nombre, desc, inicio, fin, premio, estado, max) {
 
 function logout() {
     localStorage.removeItem("token");
-    window.location.href = "login.html";
+    window.location.href = "login";
 }
 
 verificarRol();
