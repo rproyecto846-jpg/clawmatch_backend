@@ -106,9 +106,9 @@
 <nav>
     <h1>🎮 ClawMatch</h1>
     <div style="display:flex;align-items:center;gap:1rem">
-        <a href="torneos.html">Torneos</a>
-        <a href="comunidades.html">Comunidades</a>
-        <a href="suscripciones.html">⭐ Suscripción</a>
+        <a href="torneos">Torneos</a>
+        <a href="comunidades">Comunidades</a>
+        <a href="suscripciones">⭐ Suscripción</a>
         <div id="nav-avatar-container"></div>
     </div>
 </nav>
@@ -166,10 +166,10 @@
 
 <script>
 const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "login";
 
 const planData = JSON.parse(localStorage.getItem("planSeleccionado") || "null");
-if (!planData) window.location.href = "suscripciones.html";
+if (!planData) window.location.href = "suscripciones";
 
 document.getElementById("res-nombre").textContent = planData?.nombre || "-";
 document.getElementById("res-precio").textContent = planData?.precio ? planData.precio + "€" : "-";
@@ -218,7 +218,7 @@ async function procesarPago() {
         msg.className = "mensaje exito";
         msg.textContent = `✅ ¡Suscripción ${planData.nombre} activada correctamente!`;
         localStorage.removeItem("planSeleccionado");
-        setTimeout(() => window.location.href = "suscripciones.html", 2000);
+        setTimeout(() => window.location.href = "suscripciones", 2000);
     } else {
         mostrarError(data.error || "Error al activar la suscripción");
         btn.disabled = false;
