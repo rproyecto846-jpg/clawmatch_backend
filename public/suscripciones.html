@@ -69,10 +69,10 @@
 <nav>
     <h1>🎮 ClawMatch</h1>
     <div style="display:flex;align-items:center;gap:1rem">
-        <a href="torneos.html">Torneos</a>
-        <a href="comunidades.html">Comunidades</a>
-        <a href="chats.html">💬 Chats</a>
-        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <a href="torneos">Torneos</a>
+        <a href="comunidades">Comunidades</a>
+        <a href="chats">💬 Chats</a>
+        <a id="link-admin" href="admin" style="display:none">⚙️ Admin</a>
         <div id="nav-avatar-container"></div>
     </div>
 </nav>
@@ -88,7 +88,7 @@
             <h3>Tu plan actual: <span id="plan-actual" style="color:#e94560">Cargando...</span></h3>
             <p id="plan-expira" style="color:#aaa;font-size:0.85rem"></p>
         </div>
-        <a href="perfil.html" style="color:#aaa;font-size:0.85rem">Ver perfil →</a>
+        <a href="perfil" style="color:#aaa;font-size:0.85rem">Ver perfil →</a>
     </div>
 
     <!-- PLANES -->
@@ -97,7 +97,7 @@
 
 <script>
 const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "login";
 
 let suscripcionActual = null;
 
@@ -197,7 +197,7 @@ async function seleccionarPlan(id_tipo, nombre, precio) {
     if (precio > 0) {
         // Guardar plan seleccionado y redirigir a pago
         localStorage.setItem("planSeleccionado", JSON.stringify({ id_tipo, nombre, precio }));
-        window.location.href = "pago.html";
+        window.location.href = "pago";
         return;
     }
 
@@ -217,7 +217,7 @@ async function seleccionarPlan(id_tipo, nombre, precio) {
 
 function logout() {
     localStorage.removeItem("token");
-    window.location.href = "login.html";
+    window.location.href = "login";
 }
 
 init();
