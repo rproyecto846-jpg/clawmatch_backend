@@ -223,7 +223,7 @@
 
 <script>
 const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "login";
 
 let usuarioActual = null;
 let socket = null;
@@ -592,7 +592,7 @@ async function crearSala() {
 
 function cerrarModal(id) { document.getElementById(id).classList.remove("visible"); }
 
-function logout() { localStorage.removeItem("token"); window.location.href = "login.html"; }
+function logout() { localStorage.removeItem("token"); window.location.href = "login"; }
 
 init();
 </script>
