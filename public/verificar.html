@@ -13,7 +13,7 @@
 <body>
 <nav>
     <h1>🎮 ClawMatch</h1>
-    <div><a href="login.html">Login</a></div>
+    <div><a href="login">Login</a></div>
 </nav>
 <div class="container">
     <div class="card" style="max-width:450px;margin:3rem auto;text-align:center">
@@ -36,7 +36,7 @@
 </div>
 <script>
 const emailRegistrado = localStorage.getItem("emailVerificar");
-if (!emailRegistrado) window.location.href = "login.html";
+if (!emailRegistrado) window.location.href = "login";
 document.getElementById("email-display").textContent = emailRegistrado;
 
 function moverFoco(input, siguienteId) {
@@ -68,7 +68,7 @@ async function verificar() {
         msg.className = "mensaje exito";
         msg.textContent = "¡Cuenta verificada! Redirigiendo...";
         localStorage.removeItem("emailVerificar");
-        setTimeout(() => window.location.href = "login.html", 1500);
+        setTimeout(() => window.location.href = "login", 1500);
     } else {
         msg.className = "mensaje error";
         msg.textContent = data.error;
