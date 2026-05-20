@@ -64,10 +64,10 @@
 <nav>
     <h1>🎮 ClawMatch</h1>
     <div style="display:flex;align-items:center;gap:1rem">
-        <a href="torneos.html">Torneos</a>
-        <a href="comunidades.html">Comunidades</a>
-        <a href="chats.html">💬 Chats</a>
-        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <a href="torneos">Torneos</a>
+        <a href="comunidades">Comunidades</a>
+        <a href="chats">💬 Chats</a>
+        <a id="link-admin" href="admin" style="display:none">⚙️ Admin</a>
         <div id="nav-avatar-container"></div>
     </div>
 </nav>
@@ -108,11 +108,11 @@
 
 <script>
 const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "login";
 
 const params = new URLSearchParams(window.location.search);
 const id_usuario = params.get("id");
-if (!id_usuario) window.location.href = "torneos.html";
+if (!id_usuario) window.location.href = "torneos";
 
 const REMARCOS = [
     { id: "ninguno", clase: "" },
@@ -133,7 +133,7 @@ async function init() {
 
     // Si es su propio perfil redirigir
     if (String(usuarioActual.id_usuario) === String(id_usuario)) {
-        window.location.href = "perfil.html";
+        window.location.href = "perfil";
         return;
     }
 
@@ -255,7 +255,7 @@ document.getElementById("stat-comunidades").textContent = coms.total;
 
 function logout() {
     localStorage.removeItem("token");
-    window.location.href = "login.html";
+    window.location.href = "login";
 }
 </script>
 <script src="nav.js"></script>
