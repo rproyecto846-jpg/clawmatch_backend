@@ -82,10 +82,10 @@
 <nav>
     <h1>🎮 ClawMatch</h1>
     <div style="display:flex;align-items:center;gap:1rem">
-        <a href="torneos.html">Torneos</a>
-        <a href="comunidades.html">Comunidades</a>
-        <a href="chats.html">💬 Chats</a>
-        <a id="link-admin" href="admin.html" style="display:none">⚙️ Admin</a>
+        <a href="torneos">Torneos</a>
+        <a href="comunidades">Comunidades</a>
+        <a href="chats">💬 Chats</a>
+        <a id="link-admin" href="admin" style="display:none">⚙️ Admin</a>
         <div id="nav-avatar-container"></div>
     </div>
 </nav>
@@ -185,7 +185,7 @@
                 </div>
             </div>
             <div id="aviso-banner" class="bloqueo-aviso">
-                🔒 El banner está disponible desde el plan <a href="suscripciones.html">Pro (9.99€/mes)</a>
+                🔒 El banner está disponible desde el plan <a href="suscripciones">Pro (9.99€/mes)</a>
             </div>
 
             <!-- REMARCOS -->
@@ -195,7 +195,7 @@
                 <div class="remarcos-grid" id="remarcos-lista"></div>
             </div>
             <div id="aviso-remarcos" class="bloqueo-aviso" style="margin-top:0.75rem">
-                🔒 Los remarcos están disponibles desde el plan <a href="suscripciones.html">Pro (9.99€/mes)</a>
+                🔒 Los remarcos están disponibles desde el plan <a href="suscripciones">Pro (9.99€/mes)</a>
             </div>
 
             <!-- PREMIUM -->
@@ -207,7 +207,7 @@
                 <div class="fuentes-grid" id="fuentes-lista"></div>
             </div>
             <div id="aviso-premium" class="bloqueo-aviso" style="margin-top:0.75rem">
-                👑 Colores y fuentes disponibles en el plan <a href="suscripciones.html">Premium (19.99€/mes)</a>
+                👑 Colores y fuentes disponibles en el plan <a href="suscripciones">Premium (19.99€/mes)</a>
             </div>
 
             <br>
@@ -218,7 +218,7 @@
 
 <script>
 const token = localStorage.getItem("token");
-if (!token) window.location.href = "login.html";
+if (!token) window.location.href = "login";
 
 let usuarioActual = null;
 
@@ -520,7 +520,7 @@ function mostrarMensaje(texto, tipo) {
     setTimeout(() => msg.className = "mensaje", 3000);
 }
 
-function logout() { localStorage.removeItem("token"); window.location.href = "login.html"; }
+function logout() { localStorage.removeItem("token"); window.location.href = "login"; }
 
 init();
 </script>
