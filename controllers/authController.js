@@ -7,17 +7,12 @@ exports.register = async (req, res) => {
     try {
         const { nombre_usuario, email, password, telefono } = req.body;
         const password_hash = await bcrypt.hash(password, 10);
-
-        // Generar código de verificación
         const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-        const expira = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
-
+        const expira = new Date(Date.now() + 15 * 60 * 1000);
         await db.query(
             "INSERT INTO usuarios (nombre_usuario, email, password_hash, telefono, verificado, codigo_verificacion, codigo_expira) VALUES (?, ?, ?, ?, FALSE, ?, ?)",
             [nombre_usuario, email, password_hash, telefono || null, codigo, expira]
         );
-
-        // Enviar email con código
         await enviarEmail(
             email,
             "Verifica tu cuenta de ClawMatch",
@@ -26,12 +21,11 @@ exports.register = async (req, res) => {
              <h1 style="color:#e94560;letter-spacing:0.5rem">${codigo}</h1>
              <p>Este código expira en 15 minutos.</p>`
         );
-
         res.status(201).json({ message: "Usuario registrado. Revisa tu email para verificar la cuenta." });
-   } catch (error) {
-    console.error("ERROR REGISTER:", error);
-    res.status(500).json({ error: "Error en el registro", details: error.message });
-}
+    } catch (error) {
+        console.error("ERROR REGISTER:", error);
+        res.status(500).json({ error: "Error en el registro", details: error.message });
+    }
 };
 
 exports.verificarCuenta = async (req, res) => {
