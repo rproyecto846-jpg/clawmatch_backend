@@ -34,8 +34,8 @@ const pool = mysql.createPool({
     connectTimeout: 30000,
     idleTimeout: 60000,
     ssl: { rejectUnauthorized: false },
-    authPlugins: {
-        mysql_native_password: () => () => Buffer.from(process.env.DB_PASSWORD + '\0')
+    authSwitchHandler: ({ pluginName, pluginData }, cb) => {
+        cb(null, Buffer.from(process.env.DB_PASSWORD + '\0'));
     }
 });
 
