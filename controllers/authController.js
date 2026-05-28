@@ -28,9 +28,10 @@ exports.register = async (req, res) => {
         );
 
         res.status(201).json({ message: "Usuario registrado. Revisa tu email para verificar la cuenta." });
-    } catch (error) {
-        res.status(500).json({ error: "Error en el registro", details: error.message });
-    }
+   } catch (error) {
+    console.error("ERROR REGISTER:", error);
+    res.status(500).json({ error: "Error en el registro", details: error.message });
+}
 };
 
 exports.verificarCuenta = async (req, res) => {
