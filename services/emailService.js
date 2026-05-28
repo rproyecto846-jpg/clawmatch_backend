@@ -1,11 +1,15 @@
-const { Resend } = require("resend");
-const resend = new Resend(process.env.RESEND_API_KEY);
+const Brevo = require("@getbrevo/brevo");
+
+const client = Brevo.ApiClient.instance;
+client.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
+
+const apiInstance = new Brevo.TransactionalEmailsApi();
 
 exports.enviarEmail = async (destinatario, asunto, html) => {
-    await resend.emails.send({
-        from: "ClawMatch <onboarding@resend.dev>",
-        to: "rproyecto846@gmail.com", 
-        subject: asunto,
-        html,
-    });
+    const email = new Brevo.SendSmtpEmail();
+    email.to = [{ email: destinatario }];
+    email.sender = { email: "noreply@clawmatch.onrender.com", name: "ClawMatch" };
+    email.subject = asunto;
+    email.htmlContent = html;
+    await apiInstance.sendTransacEmail(email);
 };
