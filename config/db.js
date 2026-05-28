@@ -33,7 +33,10 @@ const pool = mysql.createPool({
     keepAliveInitialDelay: 0,
     connectTimeout: 30000,
     idleTimeout: 60000,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    authPlugins: {
+        mysql_native_password: () => () => Buffer.from(process.env.DB_PASSWORD + '\0')
+    }
 });
 
 pool.promise().query("SELECT 1")
