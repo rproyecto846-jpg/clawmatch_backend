@@ -1,4 +1,5 @@
 const mysql = require("mysql2");
+const net = require("net");
 require("dotenv").config();
 
 console.log("=== CONFIGURACIÓN BD ===");
@@ -6,6 +7,18 @@ console.log("DB_HOST:", process.env.DB_HOST);
 console.log("DB_PORT:", process.env.DB_PORT);
 console.log("DB_USER:", process.env.DB_USER);
 console.log("DB_NAME:", process.env.DB_NAME);
+
+// TEST TCP
+const socket = net.createConnection({
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT) || 3306
+}, () => {
+    console.log("✅ TCP conectado correctamente a", process.env.DB_HOST, process.env.DB_PORT);
+    socket.destroy();
+});
+socket.on("error", (err) => {
+    console.error("❌ TCP fallido:", err.message);
+});
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
@@ -20,9 +33,7 @@ const pool = mysql.createPool({
     keepAliveInitialDelay: 0,
     connectTimeout: 30000,
     idleTimeout: 60000,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    ssl: { rejectUnauthorized: false }
 });
 
 pool.promise().query("SELECT 1")
