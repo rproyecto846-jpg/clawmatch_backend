@@ -20,6 +20,9 @@ const pool = mysql.createPool({
     keepAliveInitialDelay: 0,
     connectTimeout: 30000,
     idleTimeout: 60000,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 pool.promise().query("SELECT 1")
